@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
+             xmlns:models="clr-namespace:IsiklikRahahaldur.Models"
+             x:Class="IsiklikRahahaldur.Views.MainPage"
+             Title="Isiklik Rahahaldur">
+
+    <!-- Привязка ViewModel к View -->
+    <ContentPage.BindingContext>
+        <vm:MainViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
+
+        <!-- Заголовок -->
+        <Label Grid.Row="0"
+               Text="Мой кошелек" 
+               FontSize="32"
+               FontAttributes="Bold"
+               HorizontalOptions="Center" />
+
+        <!-- Отображение баланса (Frame заменен на Border) -->
+        <Border Grid.Row="1" 
+                Stroke="LightGray"
+                StrokeThickness="1"
+                Padding="20" >
+            <Border.StrokeShape>
+                <RoundRectangle CornerRadius="15" />
+            </Border.StrokeShape>
+            <VerticalStackLayout>
+                <Label Text="Текущий баланс" FontSize="16" TextColor="Gray"/>
+                <Label Text="{Binding Balance, StringFormat='{0:C}'}" 
+                       FontSize="28" 
+                       FontAttributes="Bold" 
+                       HorizontalOptions="Center" />
+            </VerticalStackLayout>
+        </Border>
+
+        <!-- Список транзакций -->
+        <CollectionView Grid.Row="2" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Transaction">
+                    <!-- Frame заменен на Border -->
+                    <Border Padding="10" Margin="0,5" Stroke="Gainsboro">
+                        <Border.StrokeShape>
+                            <RoundRectangle CornerRadius="10" />
+                        </Border.StrokeShape>
+                        <Grid ColumnDefinitions="*, Auto">
+                            <VerticalStackLayout Grid.Column="0">
+                                <Label Text="{Binding Description}" FontAttributes="Bold" />
+                                <Label Text="{Binding Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="Gray" />
+                            </VerticalStackLayout>
+
+                            <!-- ИСПРАВЛЕННЫЙ И РЕКОМЕНДУЕМЫЙ СИНТАКСИС -->
+                            <Label Grid.Column="1" 
+                                   VerticalOptions="Center" 
+                                   FontAttributes="Bold"
+                                   TextColor="{Binding IsIncome, Converter={StaticResource BoolToColorConverter}}">
+                                <Label.Text>
+                                    <MultiBinding StringFormat="{}{0}{1:F2} €">
+                                        <Binding Path="IsIncome" Converter="{StaticResource BoolToSignConverter}" />
+                                        <Binding Path="Amount" />
+                                    </MultiBinding>
+                                </Label.Text>
+                            </Label>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+
+
+        <!-- Кнопки действий (HorizontalStackLayout заменен на Grid для лучшего растягивания) -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
+            <Button Grid.Column="0"
+                    Text="+ Доход"
+                    Command="{Binding AddIncomeCommand}"
+                    BackgroundColor="MediumSeaGreen"
+                    TextColor="White"
+                    CornerRadius="10"/>
+            <Button Grid.Column="1"
+                    Text="- Расход"
+                    Command="{Binding AddExpenseCommand}"
+                    BackgroundColor="IndianRed"
+                    TextColor="White"
+                    CornerRadius="10"/>
+        </Grid>
+
+    </Grid>
+</ContentPage>
+
