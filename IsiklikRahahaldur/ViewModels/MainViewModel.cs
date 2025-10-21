@@ -12,7 +12,6 @@ namespace IsiklikRahahaldur.ViewModels
     {
         private readonly DatabaseService _databaseService;
 
-        // Теперь коллекция хранит нашу новую "обертку"
         [ObservableProperty]
         private ObservableCollection<TransactionDisplayViewModel> _transactions;
 
@@ -29,16 +28,12 @@ namespace IsiklikRahahaldur.ViewModels
         [RelayCommand]
         private async Task LoadTransactionsAsync()
         {
-            // Сначала загружаем все транзакции и категории
             var transactionsFromDb = await _databaseService.GetTransactionsAsync();
             var categoriesFromDb = await _databaseService.GetCategoriesAsync();
-
-            // Превращаем список категорий в словарь для быстрого поиска
             var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
 
             Transactions.Clear();
 
-            // "Склеиваем" транзакции с именами их категорий
             foreach (var t in transactionsFromDb.OrderByDescending(x => x.Date))
             {
                 Transactions.Add(new TransactionDisplayViewModel
@@ -52,7 +47,6 @@ namespace IsiklikRahahaldur.ViewModels
 
         private void CalculateBalance()
         {
-            // Логика расчета баланса теперь использует вложенный объект Transaction
             decimal totalIncome = Transactions.Where(t => t.Transaction.IsIncome).Sum(t => t.Transaction.Amount);
             decimal totalExpense = Transactions.Where(t => !t.Transaction.IsIncome).Sum(t => t.Transaction.Amount);
             Balance = totalIncome - totalExpense;
@@ -66,6 +60,31 @@ namespace IsiklikRahahaldur.ViewModels
                 { "IsIncome", isIncome }
             };
             await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
+        }
+
+        // --- НОВЫЕ КОМАНДЫ ---
+
+        [RelayCommand]
+        private async Task DeleteTransactionAsync(TransactionDisplayViewModel transactionVM)
+        {
+            if (transactionVM is null) return;
+
+            // Удаляем из базы данных
+            await _databaseService.DeleteTransactionAsync(transactionVM.Transaction);
+            // Удаляем из списка на экране
+            Transactions.Remove(transactionVM);
+            // Пересчитываем баланс
+            CalculateBalance();
+        }
+
+        [RelayCommand]
+        private async Task GoToEditTransactionAsync(TransactionDisplayViewModel transactionVM)
+        {
+            if (transactionVM is null) return;
+
+            // Пока что эта функция не реализована, мы сделаем ее на следующем шаге.
+            // Сейчас просто покажем уведомление.
+            await Shell.Current.DisplayAlert("В разработке", "Функция редактирования будет добавлена в следующем шаге.", "OK");
         }
     }
 }
