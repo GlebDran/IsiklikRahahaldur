@@ -1,10 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:models="clr-namespace:IsiklikRahahaldur.Models"
+             xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
              x:Class="IsiklikRahahaldur.Views.MainPage"
              Title="{Binding Title}">
 
+    <!-- 
+    1. Указываем, что DataTemplate теперь работает с нашей новой ViewModel'ю
+    2. Обновляем привязки, чтобы они использовали вложенный объект Transaction
+    3. Добавляем новый Label для отображения CategoryName
+    -->
     <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
 
         <!-- Заголовок -->
@@ -28,22 +33,27 @@
         <!-- Список транзакций -->
         <CollectionView Grid.Row="2" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:Transaction">
+                <!-- Меняем тип данных на нашу новую "обертку" -->
+                <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
                     <Border Padding="10" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
                         <Grid ColumnDefinitions="*, Auto">
                             <VerticalStackLayout Grid.Column="0">
-                                <Label Text="{Binding Description}" FontAttributes="Bold" />
-                                <Label Text="{Binding Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="Gray" />
+                                <!-- Обновляем привязку к Transaction.Description -->
+                                <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" />
+                                <!-- Добавляем Label для категории -->
+                                <Label Text="{Binding CategoryName}" FontSize="12" TextColor="Gray" />
+                                <!-- Обновляем привязку к Transaction.Date -->
+                                <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="LightSlateGray" />
                             </VerticalStackLayout>
 
                             <Label Grid.Column="1" 
                                    VerticalOptions="Center" 
                                    FontAttributes="Bold"
-                                   TextColor="{Binding IsIncome, Converter={StaticResource BoolToColorConverter}}">
+                                   TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
                                 <Label.Text>
                                     <MultiBinding StringFormat="{}{0}{1:F2} €">
-                                        <Binding Path="IsIncome" Converter="{StaticResource BoolToSignConverter}" />
-                                        <Binding Path="Amount" />
+                                        <Binding Path="Transaction.IsIncome" Converter="{StaticResource BoolToSignConverter}" />
+                                        <Binding Path="Transaction.Amount" />
                                     </MultiBinding>
                                 </Label.Text>
                             </Label>
@@ -61,7 +71,6 @@
                     BackgroundColor="MediumSeaGreen"
                     TextColor="White"
                     CornerRadius="10">
-                <!-- Вот исправленный синтаксис для передачи bool -->
                 <Button.CommandParameter>
                     <x:Boolean>True</x:Boolean>
                 </Button.CommandParameter>
@@ -73,7 +82,6 @@
                     BackgroundColor="IndianRed"
                     TextColor="White"
                     CornerRadius="10">
-                <!-- И здесь тоже -->
                 <Button.CommandParameter>
                     <x:Boolean>False</x:Boolean>
                 </Button.CommandParameter>
