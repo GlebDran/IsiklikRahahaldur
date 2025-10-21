@@ -4,13 +4,21 @@ namespace IsiklikRahahaldur.Views;
 
 public partial class MainPage : ContentPage
 {
-    // Этот конструктор получает MainViewModel через dependency injection
+    private readonly MainViewModel _viewModel;
+
     public MainPage(MainViewModel viewModel)
     {
         InitializeComponent();
+        _viewModel = viewModel;
+        BindingContext = _viewModel;
+    }
 
-        // Эта строка - самая важная. Она связывает View и ViewModel.
-        BindingContext = viewModel;
+    // Этот метод вызывается каждый раз, когда страница появляется на экране
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        // Принудительно запускаем команду загрузки транзакций
+        _viewModel.LoadTransactionsCommand.Execute(null);
     }
 }
 

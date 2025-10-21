@@ -1,9 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
-using IsiklikRahahaldur.Messages;
 using IsiklikRahahaldur.Models;
 using IsiklikRahahaldur.Services;
+using System.Threading.Tasks;
 
 namespace IsiklikRahahaldur.ViewModels;
 
@@ -24,7 +23,6 @@ public partial class AddTransactionViewModel : BaseViewModel
         Transaction = new Transaction();
     }
 
-    // Этот метод будет вызван, когда мы перейдем на эту страницу
     partial void OnIsIncomeChanged(bool value)
     {
         Transaction.IsIncome = value;
@@ -40,15 +38,11 @@ public partial class AddTransactionViewModel : BaseViewModel
             return;
         }
 
-        Transaction.Date = DateTime.Now;
+        Transaction.Date = System.DateTime.Now;
 
-        // Сохраняем транзакцию в базу данных
         await _databaseService.SaveTransactionAsync(Transaction);
 
-        // Отправляем сообщение всем, кто на него подписан
-        WeakReferenceMessenger.Default.Send(new TransactionAddedMessage(Transaction));
-
-        // Возвращаемся на главный экран
+        // Просто возвращаемся назад. Главный экран обновится сам.
         await Shell.Current.GoToAsync("..");
     }
 }
