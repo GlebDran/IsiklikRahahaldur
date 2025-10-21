@@ -1,19 +1,17 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace IsiklikRahahaldur.ViewModels
 {
-    /// <summary>
-    /// Базовый класс для всех ViewModel. Реализует интерфейс INotifyPropertyChanged
-    /// для автоматического обновления UI при изменении свойств.
-    /// </summary>
-    public class BaseViewModel : INotifyPropertyChanged
+    // Указываем, что наш базовый ViewModel наследуется от ObservableObject
+    public partial class BaseViewModel : ObservableObject
     {
-        public event PropertyChangedEventHandler PropertyChanged;
+        [ObservableProperty]
+        private bool _isBusy;
 
-        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        [ObservableProperty]
+        private string _title;
+
+        public bool IsNotBusy => !_isBusy;
     }
 }
+

@@ -1,63 +1,75 @@
-﻿using IsiklikRahahaldur.Models;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using IsiklikRahahaldur.Models;
+using IsiklikRahahaldur.Services;
+using IsiklikRahahaldur.Views;
 using System.Collections.ObjectModel;
-using System.Windows.Input;
+using System.Diagnostics;
 
-namespace IsiklikRahahaldur.ViewModels
+namespace IsiklikRahahaldur.ViewModels;
+
+public partial class MainViewModel : BaseViewModel
 {
-    public class MainViewModel : BaseViewModel
+    private readonly DatabaseService _databaseService;
+
+    [ObservableProperty]
+    private decimal _balance;
+
+    public ObservableCollection<Transaction> Transactions { get; } = new();
+
+    // Переменная для хранения новой транзакции, полученной со страницы добавления
+    [ObservableProperty]
+    private Transaction _newTransaction;
+
+    public MainViewModel(DatabaseService databaseService)
     {
-        private decimal _balance;
-        public decimal Balance
+        _databaseService = databaseService;
+        Title = "Мой кошелек";
+        LoadTransactionsAsync();
+    }
+
+    // Метод, который будет вызван, когда свойство NewTransaction изменится
+    partial void OnNewTransactionChanged(Transaction value)
+    {
+        if (value != null)
         {
-            get => _balance;
-            set
-            {
-                _balance = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public ObservableCollection<Transaction> Transactions { get; }
-
-        public ICommand AddIncomeCommand { get; }
-        public ICommand AddExpenseCommand { get; }
-
-        public MainViewModel()
-        {
-            Transactions = new ObservableCollection<Transaction>();
-            LoadSampleData();
+            Transactions.Add(value);
             CalculateBalance();
-
-            // Пока команды ничего не делают, но они готовы к использованию.
-            AddIncomeCommand = new Command(OnAddIncome);
-            AddExpenseCommand = new Command(OnAddExpense);
         }
+    }
 
-        private void LoadSampleData()
+
+    private async void LoadTransactionsAsync()
+    {
+        var transactions = await _databaseService.GetTransactionsAsync();
+        Transactions.Clear();
+        foreach (var transaction in transactions)
         {
-            // Пример данных, чтобы макет не был пустым.
-            Transactions.Add(new Transaction { Amount = 1200.00m, IsIncome = true, Description = "Зарплата", Date = DateTime.Now.AddDays(-5) });
-            Transactions.Add(new Transaction { Amount = 45.50m, IsIncome = false, Description = "Продукты в магазине", Date = DateTime.Now.AddDays(-3) });
-            Transactions.Add(new Transaction { Amount = 250.00m, IsIncome = false, Description = "Коммунальные платежи", Date = DateTime.Now.AddDays(-2) });
-            Transactions.Add(new Transaction { Amount = 300.00m, IsIncome = true, Description = "Фриланс проект", Date = DateTime.Now.AddDays(-1) });
+            Transactions.Add(transaction);
         }
+        CalculateBalance();
+    }
 
-        private void CalculateBalance()
+    private void CalculateBalance()
+    {
+        Balance = Transactions.Where(t => t.IsIncome).Sum(t => t.Amount) - Transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+    }
+
+    [RelayCommand]
+    private async Task GoToAddTransactionAsync(bool isIncome)
+    {
+        try
         {
-            decimal totalIncome = Transactions.Where(t => t.IsIncome).Sum(t => t.Amount);
-            decimal totalExpense = Transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
-            Balance = totalIncome - totalExpense;
+            // Передаем параметр IsIncome на страницу добавления
+            await Shell.Current.GoToAsync(nameof(AddTransactionPage), true, new Dictionary<string, object>
+            {
+                { "IsIncome", isIncome }
+            });
         }
-
-        private void OnAddIncome()
+        catch (Exception ex)
         {
-            // Логика для добавления дохода будет здесь
-            // Например, открытие новой страницы
-        }
-
-        private void OnAddExpense()
-        {
-            // Логика для добавления расхода будет здесь
+            Debug.WriteLine($"Ошибка навигации: {ex.Message}");
         }
     }
 }
+

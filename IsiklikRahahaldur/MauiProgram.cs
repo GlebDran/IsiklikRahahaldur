@@ -1,6 +1,7 @@
-﻿using IsiklikRahahaldur.Services; 
-using IsiklikRahahaldur.ViewModels; 
-using IsiklikRahahaldur.Views; 
+﻿using Microsoft.Extensions.Logging;
+using IsiklikRahahaldur.Services;
+using IsiklikRahahaldur.ViewModels;
+using IsiklikRahahaldur.Views;
 
 namespace IsiklikRahahaldur;
 
@@ -17,15 +18,22 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // <-- НАЧАЛО ИЗМЕНЕНИЙ -->
-        // Регистрируем наш сервис как Singleton (один экземпляр на все приложение)
+#if DEBUG
+        builder.Logging.AddDebug();
+#endif
+
+        // Регистрация сервиса для базы данных
         builder.Services.AddSingleton<DatabaseService>();
 
-        // Регистрируем View и ViewModel
-        builder.Services.AddSingleton<MainPage>();
+        // Регистрация ViewModel'ов
         builder.Services.AddSingleton<MainViewModel>();
-        // <-- КОНЕЦ ИЗМЕНЕНИЙ -->
+        builder.Services.AddTransient<AddTransactionViewModel>(); // Transient, т.к. страница создается каждый раз заново
+
+        // Регистрация страниц (Views)
+        builder.Services.AddSingleton<MainPage>();
+        builder.Services.AddTransient<AddTransactionPage>(); // Transient для страниц, которые не должны "запоминать" состояние
 
         return builder.Build();
     }
 }
+
