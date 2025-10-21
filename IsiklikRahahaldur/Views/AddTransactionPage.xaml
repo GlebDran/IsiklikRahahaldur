@@ -6,22 +6,23 @@
              x:DataType="vm:AddTransactionViewModel"
              Title="{Binding Title}">
 
-    <!-- 
-    ВАЖНО: Мы убрали отсюда блок <ContentPage.BindingContext>,
-    потому что теперь контекст устанавливается в файле .xaml.cs,
-    чтобы использовать Dependency Injection.
-    -->
-
     <VerticalStackLayout Spacing="15" Padding="20">
 
         <Label Text="Описание" />
         <Entry Text="{Binding Transaction.Description}"
                Placeholder="Например, покупка продуктов" />
 
-        <Label Text="Сумма" />
+        <Label Text="Сумма" Margin="0,10,0,0" />
         <Entry Text="{Binding Transaction.Amount}"
                Keyboard="Numeric"
                Placeholder="0.00"/>
+
+        <!-- Новый элемент для выбора категории -->
+        <Label Text="Категория" Margin="0,10,0,0" />
+        <Picker ItemsSource="{Binding Categories}"
+                SelectedItem="{Binding SelectedCategory}"
+                ItemDisplayBinding="{Binding Name}"
+                Title="Выберите категорию" />
 
         <Button Text="Сохранить" 
                 Command="{Binding SaveTransactionCommand}"
