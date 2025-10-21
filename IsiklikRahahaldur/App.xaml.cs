@@ -1,15 +1,14 @@
-﻿namespace IsiklikRahahaldur
-{
-    public partial class App : Application
-    {
-        public App()
-        {
-            InitializeComponent();
-        }
+﻿using IsiklikRahahaldur.Views;
 
-        protected override Window CreateWindow(IActivationState? activationState)
-        {
-            return new Window(new AppShell());
-        }
+namespace IsiklikRahahaldur;
+
+public partial class App : Application
+{
+    public App()
+    {
+        InitializeComponent();
+
+        // Указываем, что стартовая страница теперь MainPage
+        MainPage = new AppShell();
     }
 }
