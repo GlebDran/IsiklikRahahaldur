@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:IsiklikRahahaldur.Models"
              x:Class="IsiklikRahahaldur.Views.MainPage"
-             Title="Isiklik Rahahaldur">
+             Title="{Binding Title}">
 
     <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
 
@@ -36,7 +36,6 @@
                                 <Label Text="{Binding Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="Gray" />
                             </VerticalStackLayout>
 
-                            <!-- Сумма с разным цветом для дохода и расхода -->
                             <Label Grid.Column="1" 
                                    VerticalOptions="Center" 
                                    FontAttributes="Bold"
@@ -56,21 +55,32 @@
 
         <!-- Кнопки действий -->
         <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
-            <Button Grid.Column="0"
+            <Button Grid.Column="0" 
                     Text="+ Доход"
                     Command="{Binding GoToAddTransactionCommand}"
-                    CommandParameter="True"
                     BackgroundColor="MediumSeaGreen"
                     TextColor="White"
-                    CornerRadius="10"/>
-            <Button Grid.Column="1"
+                    CornerRadius="10">
+                <!-- Вот исправленный синтаксис для передачи bool -->
+                <Button.CommandParameter>
+                    <x:Boolean>True</x:Boolean>
+                </Button.CommandParameter>
+            </Button>
+
+            <Button Grid.Column="1" 
                     Text="- Расход"
                     Command="{Binding GoToAddTransactionCommand}"
-                    CommandParameter="False"
                     BackgroundColor="IndianRed"
                     TextColor="White"
-                    CornerRadius="10"/>
+                    CornerRadius="10">
+                <!-- И здесь тоже -->
+                <Button.CommandParameter>
+                    <x:Boolean>False</x:Boolean>
+                </Button.CommandParameter>
+            </Button>
         </Grid>
+
     </Grid>
+
 </ContentPage>
 

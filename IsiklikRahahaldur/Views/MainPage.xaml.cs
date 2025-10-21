@@ -1,13 +1,16 @@
-﻿namespace IsiklikRahahaldur.Views;
+﻿using IsiklikRahahaldur.ViewModels;
+
+namespace IsiklikRahahaldur.Views;
 
 public partial class MainPage : ContentPage
 {
-    public MainPage()
+    // Этот конструктор получает MainViewModel через dependency injection
+    public MainPage(MainViewModel viewModel)
     {
         InitializeComponent();
 
-        // Устанавливаем BindingContext. 
-        // В XAML это сделано статически, но можно и программно:
-        // this.BindingContext = new ViewModels.MainViewModel();
+        // Эта строка - самая важная. Она связывает View и ViewModel.
+        BindingContext = viewModel;
     }
 }
+

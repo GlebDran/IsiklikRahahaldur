@@ -1,72 +1,55 @@
-﻿using System.Windows.Input;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using IsiklikRahahaldur.Messages;
 using IsiklikRahahaldur.Models;
+using IsiklikRahahaldur.Services;
 
-namespace IsiklikRahahaldur.ViewModels
+namespace IsiklikRahahaldur.ViewModels;
+
+[QueryProperty(nameof(IsIncome), "IsIncome")]
+public partial class AddTransactionViewModel : BaseViewModel
 {
-    [QueryProperty(nameof(IsIncome), "isIncome")]
-    public class AddTransactionViewModel : BaseViewModel
+    private readonly DatabaseService _databaseService;
+
+    [ObservableProperty]
+    private Transaction _transaction;
+
+    [ObservableProperty]
+    private bool _isIncome;
+
+    public AddTransactionViewModel(DatabaseService databaseService)
     {
-        private string _description;
-        public string Description
+        _databaseService = databaseService;
+        Transaction = new Transaction();
+    }
+
+    // Этот метод будет вызван, когда мы перейдем на эту страницу
+    partial void OnIsIncomeChanged(bool value)
+    {
+        Transaction.IsIncome = value;
+        Title = value ? "Добавить доход" : "Добавить расход";
+    }
+
+    [RelayCommand]
+    private async Task SaveTransactionAsync()
+    {
+        if (Transaction.Amount <= 0 || string.IsNullOrWhiteSpace(Transaction.Description))
         {
-            get => _description;
-            set => SetProperty(ref _description, value);
+            await Shell.Current.DisplayAlert("Ошибка", "Пожалуйста, введите описание и сумму.", "OK");
+            return;
         }
 
-        private decimal _amount;
-        public decimal Amount
-        {
-            get => _amount;
-            set => SetProperty(ref _amount, value);
-        }
+        Transaction.Date = DateTime.Now;
 
-        private bool _isIncome;
-        public bool IsIncome
-        {
-            get => _isIncome;
-            set
-            {
-                SetProperty(ref _isIncome, value);
-                Title = value ? "Новый доход" : "Новый расход";
-            }
-        }
+        // Сохраняем транзакцию в базу данных
+        await _databaseService.SaveTransactionAsync(Transaction);
 
-        public ICommand SaveCommand { get; }
-        public ICommand CancelCommand { get; }
+        // Отправляем сообщение всем, кто на него подписан
+        WeakReferenceMessenger.Default.Send(new TransactionAddedMessage(Transaction));
 
-        public AddTransactionViewModel()
-        {
-            SaveCommand = new Command(async () => await SaveTransaction(), CanSave);
-            CancelCommand = new Command(async () => await Shell.Current.GoToAsync(".."));
-
-            // Чтобы кнопка "Сохранить" обновляла свое состояние
-            this.PropertyChanged += (_, __) => (SaveCommand as Command).ChangeCanExecute();
-        }
-
-        private bool CanSave()
-        {
-            return !string.IsNullOrWhiteSpace(Description) && Amount > 0;
-        }
-
-        private async Task SaveTransaction()
-        {
-            var newTransaction = new Transaction
-            {
-                Description = this.Description,
-                Amount = this.Amount,
-                IsIncome = this.IsIncome,
-                Date = DateTime.Now
-            };
-
-            // Создаем словарь для передачи данных обратно на главную страницу
-            var navigationParameter = new Dictionary<string, object>
-            {
-                { "NewTransaction", newTransaction }
-            };
-
-            // Возвращаемся назад и передаем данные
-            await Shell.Current.GoToAsync("..", navigationParameter);
-        }
+        // Возвращаемся на главный экран
+        await Shell.Current.GoToAsync("..");
     }
 }
 

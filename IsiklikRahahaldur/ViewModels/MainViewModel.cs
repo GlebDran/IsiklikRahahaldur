@@ -1,75 +1,79 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using IsiklikRahahaldur.Models;
+using CommunityToolkit.Mvvm.Messaging;
+using IsiklikRahahaldur.Messages;
+// Вот это исправление. Мы говорим, что Transaction - это наш класс.
+using Transaction = IsiklikRahahaldur.Models.Transaction;
 using IsiklikRahahaldur.Services;
 using IsiklikRahahaldur.Views;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace IsiklikRahahaldur.ViewModels;
 
-public partial class MainViewModel : BaseViewModel
+// Добавляем IRecipient, чтобы ViewModel мог получать сообщения
+public partial class MainViewModel : BaseViewModel, IRecipient<TransactionAddedMessage>
 {
     private readonly DatabaseService _databaseService;
 
     [ObservableProperty]
-    private decimal _balance;
+    private ObservableCollection<Transaction> _transactions;
 
-    public ObservableCollection<Transaction> Transactions { get; } = new();
-
-    // Переменная для хранения новой транзакции, полученной со страницы добавления
     [ObservableProperty]
-    private Transaction _newTransaction;
+    private decimal _balance;
 
     public MainViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
         Title = "Мой кошелек";
-        LoadTransactionsAsync();
+        Transactions = new ObservableCollection<Transaction>();
+
+        // Подписываемся на получение сообщений
+        WeakReferenceMessenger.Default.Register(this);
+
+        // Загружаем данные при старте
+        _ = LoadTransactionsAsync();
     }
 
-    // Метод, который будет вызван, когда свойство NewTransaction изменится
-    partial void OnNewTransactionChanged(Transaction value)
+    // Этот метод автоматически вызывается, когда приходит новое сообщение
+    public void Receive(TransactionAddedMessage message)
     {
-        if (value != null)
+        // Важно: обновление интерфейса должно происходить в основном потоке
+        MainThread.BeginInvokeOnMainThread(() =>
         {
-            Transactions.Add(value);
+            Transactions.Add(message.Value);
             CalculateBalance();
-        }
+        });
     }
 
-
-    private async void LoadTransactionsAsync()
+    [RelayCommand]
+    private async Task LoadTransactionsAsync()
     {
-        var transactions = await _databaseService.GetTransactionsAsync();
+        var transactionsFromDb = await _databaseService.GetTransactionsAsync();
         Transactions.Clear();
-        foreach (var transaction in transactions)
+        foreach (var t in transactionsFromDb)
         {
-            Transactions.Add(transaction);
+            Transactions.Add(t);
         }
         CalculateBalance();
     }
 
     private void CalculateBalance()
     {
-        Balance = Transactions.Where(t => t.IsIncome).Sum(t => t.Amount) - Transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+        decimal totalIncome = Transactions.Where(t => t.IsIncome).Sum(t => t.Amount);
+        decimal totalExpense = Transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+        Balance = totalIncome - totalExpense;
     }
 
     [RelayCommand]
     private async Task GoToAddTransactionAsync(bool isIncome)
     {
-        try
+        var navigationParameter = new Dictionary<string, object>
         {
-            // Передаем параметр IsIncome на страницу добавления
-            await Shell.Current.GoToAsync(nameof(AddTransactionPage), true, new Dictionary<string, object>
-            {
-                { "IsIncome", isIncome }
-            });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"Ошибка навигации: {ex.Message}");
-        }
+            { "IsIncome", isIncome }
+        };
+        await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
     }
 }
 
