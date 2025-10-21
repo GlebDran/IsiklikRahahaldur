@@ -3,24 +3,34 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
              x:Class="IsiklikRahahaldur.Views.AddTransactionPage"
+             x:DataType="vm:AddTransactionViewModel"
              Title="{Binding Title}">
 
-    <ContentPage.BindingContext>
-        <vm:AddTransactionViewModel/>
-    </ContentPage.BindingContext>
+    <!-- 
+    ВАЖНО: Мы убрали отсюда блок <ContentPage.BindingContext>,
+    потому что теперь контекст устанавливается в файле .xaml.cs,
+    чтобы использовать Dependency Injection.
+    -->
 
     <VerticalStackLayout Spacing="15" Padding="20">
+
         <Label Text="Описание" />
-        <Entry Text="{Binding Description}" Placeholder="Например, покупка продуктов" />
+        <Entry Text="{Binding Transaction.Description}"
+               Placeholder="Например, покупка продуктов" />
 
         <Label Text="Сумма" />
-        <Entry Text="{Binding Amount}" Placeholder="0.00" Keyboard="Numeric" />
+        <Entry Text="{Binding Transaction.Amount}"
+               Keyboard="Numeric"
+               Placeholder="0.00"/>
 
         <Button Text="Сохранить" 
                 Command="{Binding SaveTransactionCommand}"
-                HorizontalOptions="Fill"
-                Margin="0,20,0,0"
-                CornerRadius="10"/>
+                BackgroundColor="MediumPurple"
+                TextColor="White"
+                CornerRadius="10"
+                Margin="0,20,0,0" />
+
     </VerticalStackLayout>
 
 </ContentPage>
+
