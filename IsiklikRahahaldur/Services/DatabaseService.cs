@@ -11,17 +11,20 @@ namespace IsiklikRahahaldur.Services
     {
         private SQLiteAsyncConnection _database;
 
-        // Метод для инициализации базы данных
+        // Флаги для корректной работы с кодировкой и потоками
+        private const SQLiteOpenFlags Flags =
+            SQLiteOpenFlags.ReadWrite |
+            SQLiteOpenFlags.Create |
+            SQLiteOpenFlags.SharedCache;
+
         private async Task Init()
         {
             if (_database is not null)
                 return;
 
-            // Путь к файлу базы данных
             var databasePath = Path.Combine(FileSystem.AppDataDirectory, "MyFinance.db");
-            _database = new SQLiteAsyncConnection(databasePath);
+            _database = new SQLiteAsyncConnection(databasePath, Flags);
 
-            // Создаем таблицу Transaction, если ее еще нет
             await _database.CreateTableAsync<Transaction>();
         }
 
@@ -36,12 +39,10 @@ namespace IsiklikRahahaldur.Services
             await Init();
             if (transaction.Id != 0)
             {
-                // Обновляем существующую запись
                 return await _database.UpdateAsync(transaction);
             }
             else
             {
-                // Добавляем новую запись
                 return await _database.InsertAsync(transaction);
             }
         }
@@ -53,3 +54,4 @@ namespace IsiklikRahahaldur.Services
         }
     }
 }
+
