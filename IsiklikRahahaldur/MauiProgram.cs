@@ -3,6 +3,7 @@ using IsiklikRahahaldur.Services;
 using IsiklikRahahaldur.ViewModels;
 using IsiklikRahahaldur.Views;
 using Microcharts.Maui;
+using CommunityToolkit.Maui;
 
 namespace IsiklikRahahaldur;
 
@@ -14,11 +15,13 @@ public static class MauiProgram
         builder
             .UseMauiApp<App>()
             .UseMicrocharts()
+            .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
+
 
 #if DEBUG
         builder.Logging.AddDebug();
