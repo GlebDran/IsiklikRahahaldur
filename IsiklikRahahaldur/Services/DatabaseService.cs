@@ -75,6 +75,28 @@ namespace IsiklikRahahaldur.Services
                 : await _database.InsertAsync(category);
         }
 
+        public async Task<int> DeleteCategoryAsync(Category category)
+        {
+            await Init();
+            return await _database.DeleteAsync(category);
+        }
+
+        public async Task UpdateTransactionsCategoryToDefaultAsync(int categoryId)
+        {
+            await Init();
+
+            // Находим транзакции
+            var transactionsToUpdate = await _database.Table<Transaction>()
+                                                      .Where(t => t.CategoryId == categoryId)
+                                                      .ToListAsync();
+
+            foreach (var t in transactionsToUpdate)
+            {
+                t.CategoryId = 0; // Устанавливаем ID "Без категории"
+                await _database.UpdateAsync(t);
+            }
+        }
+
         private async Task SeedDefaultCategoriesAsync()
         {
             var categories = await GetCategoriesAsync();

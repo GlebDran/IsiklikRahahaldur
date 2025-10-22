@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
+             x:Class="IsiklikRahahaldur.Views.CategoriesPage"
+             x:DataType="vm:CategoriesViewModel"
+             Title="{Binding Title}">
+
+    <ContentPage.Behaviors>
+        <toolkit:EventToCommandBehavior xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+                                        EventName="Appearing"
+                                        Command="{Binding LoadCategoriesCommand}" />
+    </ContentPage.Behaviors>
+
+    <VerticalStackLayout Spacing="10" Padding="15">
+
+        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10">
+            <Entry Grid.Column="0" 
+                   Placeholder="Введите название..." 
+                   Text="{Binding NewCategoryName}"
+                   ReturnCommand="{Binding AddCategoryCommand}"/>
+
+            <Button Grid.Column="1" 
+                    Text="Добавить" 
+                    Command="{Binding AddCategoryCommand}" />
+        </Grid>
+
+        <Line Stroke="LightGray" StrokeThickness="1" Margin="0,10" />
+
+        <CollectionView ItemsSource="{Binding Categories}">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Category"
+                              xmlns:models="clr-namespace:IsiklikRahahaldur.Models">
+                    <SwipeView>
+                        <SwipeView.RightItems>
+                            <SwipeItems Mode="Execute">
+                                <SwipeItem Text="Удалить"
+                                           BackgroundColor="IndianRed"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=DeleteCategoryCommand}"
+                                           CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+
+                        <SwipeView.LeftItems>
+                            <SwipeItems Mode="Execute">
+                                <SwipeItem Text="Изменить"
+                                           BackgroundColor="LightSkyBlue"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:CategoriesViewModel}}, Path=EditCategoryCommand}"
+                                           CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.LeftItems>
+
+                        <Border Padding="15" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
+                            <Label Text="{Binding Name}" VerticalOptions="Center" FontSize="16"/>
+                        </Border>
+                    </SwipeView>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </VerticalStackLayout>
+</ContentPage>

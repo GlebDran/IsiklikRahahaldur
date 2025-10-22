@@ -10,6 +10,7 @@ public partial class AppShell : Shell
 
         // Регистрируем маршрут для страницы добавления транзакции
         Routing.RegisterRoute(nameof(AddTransactionPage), typeof(AddTransactionPage));
+        Routing.RegisterRoute(nameof(CategoriesPage), typeof(CategoriesPage));
     }
 }
 

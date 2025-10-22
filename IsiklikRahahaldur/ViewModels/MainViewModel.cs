@@ -2,13 +2,14 @@
 using CommunityToolkit.Mvvm.Input;
 using IsiklikRahahaldur.Services;
 using IsiklikRahahaldur.Views;
+using IsiklikRahahaldur.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Microcharts; // <-- Добавляем using
-using SkiaSharp; // <-- Добавляем using
-using System.Collections.Generic; // <-- Добавляем using
-using System; // <-- Добавляем using
+using Microcharts;
+using SkiaSharp;
+using System.Collections.Generic;
+using System;
 
 namespace IsiklikRahahaldur.ViewModels
 {
@@ -147,6 +148,11 @@ namespace IsiklikRahahaldur.ViewModels
                 { "TransactionId", transactionVM.Transaction.Id }
             };
             await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
+        }
+        [RelayCommand]
+        private async Task GoToCategoriesAsync()
+        {
+            await Shell.Current.GoToAsync(nameof(CategoriesPage));
         }
     }
 }
