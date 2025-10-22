@@ -55,25 +55,27 @@ namespace IsiklikRahahaldur.ViewModels
         [RelayCommand]
         private async Task GoToAddTransactionAsync(bool isIncome)
         {
+            // --- ИЗМЕНЕНО ---
+            // Передаем ID=0, чтобы страница знала, что это НОВАЯ транзакция
             var navigationParameter = new Dictionary<string, object>
             {
-                { "IsIncome", isIncome }
+                { "IsIncome", isIncome },
+                { "TransactionId", 0 }
             };
             await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
         }
-
-        // --- НОВЫЕ КОМАНДЫ ---
 
         [RelayCommand]
         private async Task DeleteTransactionAsync(TransactionDisplayViewModel transactionVM)
         {
             if (transactionVM is null) return;
 
-            // Удаляем из базы данных
+            // Спрашиваем подтверждение
+            bool answer = await Shell.Current.DisplayAlert("Подтверждение", $"Вы уверены, что хотите удалить '{transactionVM.Transaction.Description}'?", "Да", "Нет");
+            if (!answer) return;
+
             await _databaseService.DeleteTransactionAsync(transactionVM.Transaction);
-            // Удаляем из списка на экране
             Transactions.Remove(transactionVM);
-            // Пересчитываем баланс
             CalculateBalance();
         }
 
@@ -82,9 +84,13 @@ namespace IsiklikRahahaldur.ViewModels
         {
             if (transactionVM is null) return;
 
-            // Пока что эта функция не реализована, мы сделаем ее на следующем шаге.
-            // Сейчас просто покажем уведомление.
-            await Shell.Current.DisplayAlert("В разработке", "Функция редактирования будет добавлена в следующем шаге.", "OK");
+            // --- ИЗМЕНЕНО ---
+            // Убираем уведомление и передаем ID существующей транзакции
+            var navigationParameter = new Dictionary<string, object>
+            {
+                { "TransactionId", transactionVM.Transaction.Id }
+            };
+            await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
         }
     }
 }

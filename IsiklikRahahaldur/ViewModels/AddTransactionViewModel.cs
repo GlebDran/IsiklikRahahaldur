@@ -3,11 +3,13 @@ using CommunityToolkit.Mvvm.Input;
 using IsiklikRahahaldur.Models;
 using IsiklikRahahaldur.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace IsiklikRahahaldur.ViewModels;
 
-[QueryProperty(nameof(IsIncome), "IsIncome")]
+[QueryProperty("IsIncome", "IsIncome")]
+[QueryProperty("TransactionId", "TransactionId")]
 public partial class AddTransactionViewModel : BaseViewModel
 {
     private readonly DatabaseService _databaseService;
@@ -16,26 +18,40 @@ public partial class AddTransactionViewModel : BaseViewModel
     private Transaction _transaction;
 
     [ObservableProperty]
-    private bool _isIncome;
-
-    // Новые свойства для списка категорий и выбранной категории
-    [ObservableProperty]
     private ObservableCollection<Category> _categories;
 
     [ObservableProperty]
     private Category _selectedCategory;
+
+    // --- ИЗМЕНЕНИЕ: Убрали [ObservableProperty] с _isIncome ---
+    private bool _isIncome;
+    public bool IsIncome
+    {
+        get => _isIncome;
+        set => SetProperty(ref _isIncome, value);
+    }
+
+    private int _transactionId;
+    public int TransactionId
+    {
+        get => _transactionId;
+        set
+        {
+            if (SetProperty(ref _transactionId, value))
+            {
+                _ = LoadDataAsync();
+            }
+        }
+    }
 
     public AddTransactionViewModel(DatabaseService databaseService)
     {
         _databaseService = databaseService;
         Transaction = new Transaction();
         Categories = new ObservableCollection<Category>();
-
-        // Загружаем категории при создании ViewModel
-        _ = LoadCategoriesAsync();
     }
 
-    private async Task LoadCategoriesAsync()
+    private async Task LoadDataAsync()
     {
         var cats = await _databaseService.GetCategoriesAsync();
         Categories.Clear();
@@ -43,12 +59,21 @@ public partial class AddTransactionViewModel : BaseViewModel
         {
             Categories.Add(cat);
         }
-    }
 
-    partial void OnIsIncomeChanged(bool value)
-    {
-        Transaction.IsIncome = value;
-        Title = value ? "Добавить доход" : "Добавить расход";
+        if (TransactionId == 0)
+        {
+            // --- РЕЖИМ СОЗДАНИЯ ---
+            Transaction = new Transaction();
+            Transaction.IsIncome = IsIncome;
+            Title = IsIncome ? "Добавить доход" : "Добавить расход";
+        }
+        else
+        {
+            // --- РЕЖИМ РЕДАКТИРОВАНИЯ ---
+            Transaction = await _databaseService.GetTransactionByIdAsync(TransactionId);
+            SelectedCategory = Categories.FirstOrDefault(c => c.Id == Transaction.CategoryId);
+            Title = "Редактировать";
+        }
     }
 
     [RelayCommand]
@@ -66,8 +91,11 @@ public partial class AddTransactionViewModel : BaseViewModel
             return;
         }
 
-        Transaction.Date = System.DateTime.Now;
-        // Присваиваем ID выбранной категории нашей транзакции
+        if (Transaction.Id == 0)
+        {
+            Transaction.Date = System.DateTime.Now;
+        }
+
         Transaction.CategoryId = SelectedCategory.Id;
 
         await _databaseService.SaveTransactionAsync(Transaction);

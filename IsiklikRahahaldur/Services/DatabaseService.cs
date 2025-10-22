@@ -25,11 +25,9 @@ namespace IsiklikRahahaldur.Services
             var databasePath = Path.Combine(FileSystem.AppDataDirectory, "MyFinance.db");
             _database = new SQLiteAsyncConnection(databasePath, Flags);
 
-            // Создаем обе таблицы, если их нет
             await _database.CreateTableAsync<Transaction>();
             await _database.CreateTableAsync<Category>();
 
-            // Добавляем категории по умолчанию, если их еще нет
             await SeedDefaultCategoriesAsync();
         }
 
@@ -38,6 +36,14 @@ namespace IsiklikRahahaldur.Services
         {
             await Init();
             return await _database.Table<Transaction>().ToListAsync();
+        }
+
+        // --- НОВЫЙ МЕТОД ---
+        // Получаем одну транзакцию по ее ID
+        public async Task<Transaction> GetTransactionByIdAsync(int id)
+        {
+            await Init();
+            return await _database.Table<Transaction>().Where(t => t.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<int> SaveTransactionAsync(Transaction transaction)
@@ -54,7 +60,7 @@ namespace IsiklikRahahaldur.Services
             return await _database.DeleteAsync(transaction);
         }
 
-        // --- Новые методы для Категорий ---
+        // --- Методы для Категорий ---
         public async Task<List<Category>> GetCategoriesAsync()
         {
             await Init();
@@ -69,7 +75,6 @@ namespace IsiklikRahahaldur.Services
                 : await _database.InsertAsync(category);
         }
 
-        // Метод для создания категорий по умолчанию
         private async Task SeedDefaultCategoriesAsync()
         {
             var categories = await GetCategoriesAsync();
