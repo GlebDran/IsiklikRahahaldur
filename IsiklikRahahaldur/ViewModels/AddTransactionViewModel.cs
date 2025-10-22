@@ -23,7 +23,6 @@ public partial class AddTransactionViewModel : BaseViewModel
     [ObservableProperty]
     private Category _selectedCategory;
 
-    // --- ИЗМЕНЕНИЕ: Убрали [ObservableProperty] с _isIncome ---
     private bool _isIncome;
     public bool IsIncome
     {
@@ -31,12 +30,14 @@ public partial class AddTransactionViewModel : BaseViewModel
         set => SetProperty(ref _isIncome, value);
     }
 
-    private int _transactionId;
+    // --- ИЗМЕНЕНИЕ: Устанавливаем начальное значение -1 ---
+    private int _transactionId = -1;
     public int TransactionId
     {
         get => _transactionId;
         set
         {
+            // Теперь (0 != -1) вернет true, и LoadDataAsync() запустится
             if (SetProperty(ref _transactionId, value))
             {
                 _ = LoadDataAsync();
