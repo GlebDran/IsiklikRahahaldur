@@ -2,26 +2,25 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
-             x:Class="IsiklikRahahaldur.Views.CategoriesPage"
+             xmlns:models="clr-namespace:IsiklikRahahaldur.Models"  xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit" x:Class="IsiklikRahahaldur.Views.CategoriesPage"
              x:DataType="vm:CategoriesViewModel"
              Title="{Binding Title}">
 
     <ContentPage.Behaviors>
-        <toolkit:EventToCommandBehavior xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
-                                        EventName="Appearing"
+        <toolkit:EventToCommandBehavior EventName="Appearing"
                                         Command="{Binding LoadCategoriesCommand}" />
     </ContentPage.Behaviors>
 
     <VerticalStackLayout Spacing="10" Padding="15">
 
         <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10">
-            <Entry Grid.Column="0" 
-                   Placeholder="Введите название..." 
+            <Entry Grid.Column="0"
+                   Placeholder="Введите название..."
                    Text="{Binding NewCategoryName}"
                    ReturnCommand="{Binding AddCategoryCommand}"/>
 
-            <Button Grid.Column="1" 
-                    Text="Добавить" 
+            <Button Grid.Column="1"
+                    Text="Добавить"
                     Command="{Binding AddCategoryCommand}" />
         </Grid>
 
@@ -29,8 +28,7 @@
 
         <CollectionView ItemsSource="{Binding Categories}">
             <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="models:Category"
-                              xmlns:models="clr-namespace:IsiklikRahahaldur.Models">
+                <DataTemplate x:DataType="models:Category">
                     <SwipeView>
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Execute">
