@@ -7,8 +7,7 @@
              Title="{Binding Title}">
 
     <ContentPage.Behaviors>
-        <toolkit:EventToCommandBehavior EventName="Appearing"
-                                        Command="{Binding LoadCategoriesCommand}" />
+        <toolkit:EventToCommandBehavior EventName="Appearing" Command="{Binding LoadCategoriesCommand}" />
     </ContentPage.Behaviors>
 
     <VerticalStackLayout Spacing="10" Padding="15">
