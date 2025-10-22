@@ -5,89 +5,83 @@
              x:Class="IsiklikRahahaldur.Views.MainPage"
              Title="{Binding Title}">
 
-    <!-- 
-    1. Указываем, что DataTemplate теперь работает с нашей новой ViewModel'ю
-    2. Обновляем привязки, чтобы они использовали вложенный объект Transaction
-    3. Добавляем новый Label для отображения CategoryName
-    -->
     <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
 
         <!-- Заголовок -->
-        <Label Grid.Row="0"
-               Text="Мой кошелек" 
-               FontSize="32"
-               FontAttributes="Bold"
-               HorizontalOptions="Center" />
+        <Label Grid.Row="0" Text="Мой кошелек" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" />
 
         <!-- Отображение баланса -->
         <Border Grid.Row="1" StrokeShape="RoundRectangle 15" Padding="20" Stroke="LightGray">
             <VerticalStackLayout>
                 <Label Text="Текущий баланс" FontSize="16" TextColor="Gray"/>
-                <Label Text="{Binding Balance, StringFormat='{0:F2} €'}" 
-                       FontSize="28" 
-                       FontAttributes="Bold" 
-                       HorizontalOptions="Center" />
+                <Label Text="{Binding Balance, StringFormat='{0:F2} €'}" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
             </VerticalStackLayout>
         </Border>
 
         <!-- Список транзакций -->
         <CollectionView Grid.Row="2" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
             <CollectionView.ItemTemplate>
-                <!-- Меняем тип данных на нашу новую "обертку" -->
                 <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
-                    <Border Padding="10" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
-                        <Grid ColumnDefinitions="*, Auto">
-                            <VerticalStackLayout Grid.Column="0">
-                                <!-- Обновляем привязку к Transaction.Description -->
-                                <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" />
-                                <!-- Добавляем Label для категории -->
-                                <Label Text="{Binding CategoryName}" FontSize="12" TextColor="Gray" />
-                                <!-- Обновляем привязку к Transaction.Date -->
-                                <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="LightSlateGray" />
-                            </VerticalStackLayout>
+                    <!-- Оборачиваем элемент списка в SwipeView -->
+                    <SwipeView>
+                        <!-- Элементы, появляющиеся при свайпе СЛЕВА НАПРАВО -->
+                        <SwipeView.LeftItems>
+                            <SwipeItems Mode="Execute">
+                                <SwipeItem Text="Изменить"
+                                           BackgroundColor="LightSkyBlue"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=GoToEditTransactionCommand}"
+                                           CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.LeftItems>
 
-                            <Label Grid.Column="1" 
-                                   VerticalOptions="Center" 
-                                   FontAttributes="Bold"
-                                   TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
-                                <Label.Text>
-                                    <MultiBinding StringFormat="{}{0}{1:F2} €">
-                                        <Binding Path="Transaction.IsIncome" Converter="{StaticResource BoolToSignConverter}" />
-                                        <Binding Path="Transaction.Amount" />
-                                    </MultiBinding>
-                                </Label.Text>
-                            </Label>
-                        </Grid>
-                    </Border>
+                        <!-- Элементы, появляющиеся при свайпе СПРАВА НАЛЕВО -->
+                        <SwipeView.RightItems>
+                            <SwipeItems Mode="Execute">
+                                <SwipeItem Text="Удалить"
+                                           BackgroundColor="IndianRed"
+                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DeleteTransactionCommand}"
+                                           CommandParameter="{Binding .}"/>
+                            </SwipeItems>
+                        </SwipeView.RightItems>
+
+                        <!-- Содержимое элемента списка (наш Border) -->
+                        <Border Padding="10" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
+                            <Grid ColumnDefinitions="*, Auto">
+                                <VerticalStackLayout Grid.Column="0">
+                                    <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" />
+                                    <Label Text="{Binding CategoryName}" FontSize="12" TextColor="Gray" />
+                                    <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="LightSlateGray" />
+                                </VerticalStackLayout>
+
+                                <Label Grid.Column="1" VerticalOptions="Center" FontAttributes="Bold"
+                                       TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
+                                    <Label.Text>
+                                        <MultiBinding StringFormat="{}{0}{1:F2} €">
+                                            <Binding Path="Transaction.IsIncome" Converter="{StaticResource BoolToSignConverter}" />
+                                            <Binding Path="Transaction.Amount" />
+                                        </MultiBinding>
+                                    </Label.Text>
+                                </Label>
+                            </Grid>
+                        </Border>
+                    </SwipeView>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>
 
         <!-- Кнопки действий -->
         <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
-            <Button Grid.Column="0" 
-                    Text="+ Доход"
-                    Command="{Binding GoToAddTransactionCommand}"
-                    BackgroundColor="MediumSeaGreen"
-                    TextColor="White"
-                    CornerRadius="10">
+            <Button Grid.Column="0" Text="+ Доход" Command="{Binding GoToAddTransactionCommand}" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10">
                 <Button.CommandParameter>
                     <x:Boolean>True</x:Boolean>
                 </Button.CommandParameter>
             </Button>
-
-            <Button Grid.Column="1" 
-                    Text="- Расход"
-                    Command="{Binding GoToAddTransactionCommand}"
-                    BackgroundColor="IndianRed"
-                    TextColor="White"
-                    CornerRadius="10">
+            <Button Grid.Column="1" Text="- Расход" Command="{Binding GoToAddTransactionCommand}" BackgroundColor="IndianRed" TextColor="White" CornerRadius="10">
                 <Button.CommandParameter>
                     <x:Boolean>False</x:Boolean>
                 </Button.CommandParameter>
             </Button>
         </Grid>
-
     </Grid>
 
 </ContentPage>
