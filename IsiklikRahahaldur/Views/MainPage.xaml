@@ -2,10 +2,18 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
+             xmlns:microcharts="clr-namespace:Microcharts.Maui;assembly=Microcharts.Maui"
              x:Class="IsiklikRahahaldur.Views.MainPage"
              Title="{Binding Title}">
 
-    <Grid RowDefinitions="Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
+    <!-- 
+    1. Добавили xmlns:microcharts
+    2. Изменили сетку (Grid) - теперь 5 рядов
+    3. Добавили ChartView в Grid.Row="2"
+    4. Сдвинули CollectionView в Grid.Row="3"
+    -->
+
+    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
 
         <!-- Заголовок -->
         <Label Grid.Row="0" Text="Мой кошелек" FontSize="32" FontAttributes="Bold" HorizontalOptions="Center" />
@@ -18,13 +26,16 @@
             </VerticalStackLayout>
         </Border>
 
-        <!-- Список транзакций -->
-        <CollectionView Grid.Row="2" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
+        <!-- НОВЫЙ БЛОК: ГРАФИК РАСХОДОВ -->
+        <microcharts:ChartView Grid.Row="2"
+                               Chart="{Binding ExpensesChart}"
+                               HeightRequest="150" />
+
+        <!-- Список транзакций (теперь в Grid.Row="3") -->
+        <CollectionView Grid.Row="3" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
-                    <!-- Оборачиваем элемент списка в SwipeView -->
                     <SwipeView>
-                        <!-- Элементы, появляющиеся при свайпе СЛЕВА НАПРАВО -->
                         <SwipeView.LeftItems>
                             <SwipeItems Mode="Execute">
                                 <SwipeItem Text="Изменить"
@@ -34,7 +45,6 @@
                             </SwipeItems>
                         </SwipeView.LeftItems>
 
-                        <!-- Элементы, появляющиеся при свайпе СПРАВА НАЛЕВО -->
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Execute">
                                 <SwipeItem Text="Удалить"
@@ -44,7 +54,6 @@
                             </SwipeItems>
                         </SwipeView.RightItems>
 
-                        <!-- Содержимое элемента списка (наш Border) -->
                         <Border Padding="10" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
                             <Grid ColumnDefinitions="*, Auto">
                                 <VerticalStackLayout Grid.Column="0">
@@ -52,7 +61,6 @@
                                     <Label Text="{Binding CategoryName}" FontSize="12" TextColor="Gray" />
                                     <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="LightSlateGray" />
                                 </VerticalStackLayout>
-
                                 <Label Grid.Column="1" VerticalOptions="Center" FontAttributes="Bold"
                                        TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
                                     <Label.Text>
@@ -69,8 +77,8 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <!-- Кнопки действий -->
-        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="10">
+        <!-- Кнопки действий (теперь в Grid.Row="4") -->
+        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="10">
             <Button Grid.Column="0" Text="+ Доход" Command="{Binding GoToAddTransactionCommand}" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10">
                 <Button.CommandParameter>
                     <x:Boolean>True</x:Boolean>

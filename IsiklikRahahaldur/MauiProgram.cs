@@ -2,6 +2,7 @@
 using IsiklikRahahaldur.Services;
 using IsiklikRahahaldur.ViewModels;
 using IsiklikRahahaldur.Views;
+using Microcharts.Maui;
 
 namespace IsiklikRahahaldur;
 
@@ -12,6 +13,7 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
+            .UseMicrocharts()
             .ConfigureFonts(fonts =>
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
@@ -22,18 +24,15 @@ public static class MauiProgram
         builder.Logging.AddDebug();
 #endif
 
-        // Регистрация сервиса для базы данных
+        // Регистрация сервисов, ViewModel'ов и страниц (остается без изменений)
         builder.Services.AddSingleton<DatabaseService>();
-
-        // Регистрация ViewModel'ов
         builder.Services.AddSingleton<MainViewModel>();
-        builder.Services.AddTransient<AddTransactionViewModel>(); // Transient, т.к. страница создается каждый раз заново
-
-        // Регистрация страниц (Views)
+        builder.Services.AddTransient<AddTransactionViewModel>();
         builder.Services.AddSingleton<MainPage>();
-        builder.Services.AddTransient<AddTransactionPage>(); // Transient для страниц, которые не должны "запоминать" состояние
+        builder.Services.AddTransient<AddTransactionPage>();
 
         return builder.Build();
     }
 }
+
 
