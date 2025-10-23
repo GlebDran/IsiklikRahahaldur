@@ -234,6 +234,13 @@ namespace IsiklikRahahaldur.ViewModels
         }
 
         [RelayCommand]
+        private async Task GoToAddIncomeAsync()
+        {
+            // Просто вызываем существующий метод с нужным параметром
+            await GoToAddTransactionAsync(true);
+        }
+
+        [RelayCommand]
         private async Task GoToAddTransactionAsync(bool isIncome)
         {
             var navigationParameter = new Dictionary<string, object>
