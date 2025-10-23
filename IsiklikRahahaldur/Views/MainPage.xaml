@@ -22,13 +22,13 @@
                    FontFamily="OpenSansSemibold"
                    VerticalOptions="Center"/>
 
-            <ImageButton Source="add_money_icon.png"
-              Style="{StaticResource QuickActionIcon}"
-              Command="{Binding GoToAddTransactionCommand}"
-              CommandParameter="{x:Boolean True}">
-                <ImageButton.Behaviors>
-                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
-                </ImageButton.Behaviors>
+            <ImageButton Grid.Column="1"
+                         Source="settings_icon.png"  Command="{Binding GoToCategoriesCommand}"
+                         HeightRequest="24" WidthRequest="24"
+                         BackgroundColor="Transparent"
+                         BorderWidth="0"
+                         Padding="5" Aspect="AspectFit"
+                         VerticalOptions="Center">
             </ImageButton>
         </Grid>
 
@@ -52,6 +52,7 @@
 
                 <Border Style="{StaticResource InfoCard}">
                     <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
+
                         <VerticalStackLayout Grid.Column="0" Spacing="8" Margin="0,5">
                             <Image Source="send_money_icon.png" Style="{StaticResource QuickActionIcon}">
                                 <Image.Behaviors>
@@ -86,8 +87,7 @@
                         <Label Text="Weekly Spending" FontSize="16" FontFamily="OpenSansSemibold"/>
                         <Label Text="{Binding PeriodExpense, StringFormat='Total: {0:N2} €', Mode=OneWay}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" IsVisible="{Binding IsNotBusy}"/>
 
-                        <microcharts:ChartView x:Name="barChartView" HeightRequest="150">
-                        </microcharts:ChartView>
+                        <microcharts:ChartView Chart="{Binding SpendingBarChart}" HeightRequest="150" />
                     </VerticalStackLayout>
                 </Border>
 
@@ -100,7 +100,7 @@
 
                         <CollectionView ItemsSource="{Binding Transactions}" Margin="0" SelectionMode="None" MaximumHeightRequest="300">
                             <CollectionView.EmptyView>
-                                <Label Text="No transactions for the selected period."
+                                <Label Text="Нет транзакций за выбранный период."
                                        HorizontalOptions="Center" VerticalOptions="Center" Margin="0,20"
                                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"/>
                             </CollectionView.EmptyView>
@@ -124,7 +124,7 @@
 
                                         <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12" Padding="10, 5">
                                             <Border Grid.Column="0" StrokeShape="RoundRectangle 20" HeightRequest="40" WidthRequest="40" Padding="8" BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#333333}" StrokeThickness="0" VerticalOptions="Center">
-                                                <Image Source="default_category_icon.png" Aspect="AspectFit"/>
+                                                <Image Source="{Binding CategoryIcon}" Aspect="AspectFit"/>
                                             </Border>
 
                                             <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
@@ -154,6 +154,7 @@
                         </CollectionView>
                     </VerticalStackLayout>
                 </Border>
+
             </VerticalStackLayout>
         </ScrollView>
     </Grid>

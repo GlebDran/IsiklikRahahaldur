@@ -7,5 +7,7 @@ namespace IsiklikRahahaldur.ViewModels
     {
         public Transaction Transaction { get; set; }
         public string CategoryName { get; set; }
+
+        public string CategoryIcon { get; set; }
     }
 }

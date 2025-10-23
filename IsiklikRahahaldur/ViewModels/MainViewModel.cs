@@ -24,7 +24,6 @@ namespace IsiklikRahahaldur.ViewModels
         [ObservableProperty]
         private decimal _balance;
 
-        // --- ИЗМЕНЕНО: Свойство SpendingBarChart остается, но обновлять будем Entries ---
         [ObservableProperty]
         private Chart _spendingBarChart;
 
@@ -39,16 +38,14 @@ namespace IsiklikRahahaldur.ViewModels
 
         private readonly SKColor _barChartColor = SKColor.Parse("#2ECC71");
 
-        // --- ИЗМЕНЕНО: Инициализируем SpendingBarChart сразу с настройками ---
         public MainViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;
             Title = "Мой кошелек";
             Transactions = new ObservableCollection<TransactionDisplayViewModel>();
-            // Инициализируем график один раз с нужными настройками
             SpendingBarChart = new BarChart
             {
-                Entries = new List<ChartEntry>(), // Начинаем с пустым списком
+                Entries = new List<ChartEntry>(),
                 LabelTextSize = 12f,
                 ValueLabelTextSize = 12f,
                 BackgroundColor = SKColors.Transparent,
@@ -56,8 +53,6 @@ namespace IsiklikRahahaldur.ViewModels
                 ValueLabelOrientation = Orientation.Horizontal,
                 IsAnimated = false,
                 Margin = 5,
-                // PointMode = PointMode.None, // УДАЛЕНО
-                // PointSize = 0, // УДАЛЕНО
             };
         }
 
@@ -67,21 +62,11 @@ namespace IsiklikRahahaldur.ViewModels
             TimePeriod newPeriod;
             switch (period?.ToLower())
             {
-                case "today":
-                case "сегодня":
-                    newPeriod = TimePeriod.Today; break;
-                case "week":
-                case "неделя":
-                    newPeriod = TimePeriod.Week; break;
-                case "month":
-                case "месяц":
-                    newPeriod = TimePeriod.Month; break;
-                case "year":
-                case "год":
-                    newPeriod = TimePeriod.Year; break;
-                case "all":
-                case "все":
-                    newPeriod = TimePeriod.All; break;
+                case "today": case "сегодня": newPeriod = TimePeriod.Today; break;
+                case "week": case "неделя": newPeriod = TimePeriod.Week; break;
+                case "month": case "месяц": newPeriod = TimePeriod.Month; break;
+                case "year": case "год": newPeriod = TimePeriod.Year; break;
+                case "all": case "все": newPeriod = TimePeriod.All; break;
                 default: newPeriod = TimePeriod.Week; break;
             }
 
@@ -103,6 +88,12 @@ namespace IsiklikRahahaldur.ViewModels
                 var transactionsFromDb = await _databaseService.GetTransactionsAsync();
                 var categoriesFromDb = await _databaseService.GetCategoriesAsync();
                 var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
+
+                // Добавляем "Без категории" в словарь для корректного отображения, если CategoryId = 0
+                if (!categoriesDict.ContainsKey(0))
+                {
+                    categoriesDict.Add(0, "Без категории");
+                }
 
                 DateTime startDate = DateTime.MinValue;
                 DateTime endDate = DateTime.MaxValue;
@@ -129,7 +120,7 @@ namespace IsiklikRahahaldur.ViewModels
                         startDate = new DateTime(now.Year, 1, 1);
                         endDate = startDate.AddYears(1);
                         break;
-                        // All и Custom не меняют startDate/endDate по умолчанию
+                    case TimePeriod.All: break;
                 }
 
                 var filteredTransactions = transactionsFromDb
@@ -140,11 +131,17 @@ namespace IsiklikRahahaldur.ViewModels
                 Transactions.Clear();
                 foreach (var t in filteredTransactions)
                 {
+                    // --- ИЗМЕНЕНО: Определяем имя категории и иконку ---
+                    string categoryName = categoriesDict.TryGetValue(t.CategoryId, out var name) ? name : "Без категории";
+                    string categoryIcon = GetIconForCategory(categoryName); // Вызываем новый метод
+
                     Transactions.Add(new TransactionDisplayViewModel
                     {
                         Transaction = t,
-                        CategoryName = categoriesDict.TryGetValue(t.CategoryId, out var name) ? name : "Без категории"
+                        CategoryName = categoryName,
+                        CategoryIcon = categoryIcon // Присваиваем имя файла иконки
                     });
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 }
 
                 CalculateBalanceAndTotals(transactionsFromDb);
@@ -156,6 +153,25 @@ namespace IsiklikRahahaldur.ViewModels
                 IsBusy = false;
             }
         }
+
+        // --- НОВЫЙ МЕТОД: Возвращает имя файла иконки по имени категории ---
+        private string GetIconForCategory(string categoryName)
+        {
+            switch (categoryName)
+            {
+                case "Продукты": return "food_icon.png";
+                case "Транспорт": return "transport_icon.png";
+                case "Дом": return "house_icon.png";
+                case "Кафе и рестораны": return "restaurants_icon.png";
+                case "Здоровье": return "health_icon.png";
+                case "Подарки": return "gift_icon.png";
+                case "Зарплата": return "salary_icon.png";
+                // Добавьте другие предопределенные категории здесь
+                default: return "other_icon.png"; // Иконка по умолчанию
+            }
+        }
+        // --- КОНЕЦ НОВОГО МЕТОДА ---
+
 
         private void CalculateBalanceAndTotals(List<Transaction> allTransactions)
         {
@@ -170,7 +186,6 @@ namespace IsiklikRahahaldur.ViewModels
             PeriodExpense = periodTransactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
         }
 
-        // --- ИЗМЕНЕНО: Обновляем Entries существующего графика ---
         private void UpdateBarChart(List<Transaction> transactions, DateTime periodStartDate)
         {
             var expensesByDayOfWeek = transactions
@@ -195,16 +210,11 @@ namespace IsiklikRahahaldur.ViewModels
                 });
             }
 
-            // Обновляем записи существующего графика, а не создаем новый
-            if (SpendingBarChart is BarChart barChart) // Проверяем тип на всякий случай
+            if (SpendingBarChart is BarChart barChart)
             {
                 barChart.Entries = chartEntries;
-                // Явно уведомляем UI об изменении всего объекта Chart,
-                // так как изменение вложенного свойства Entries может не отслеживаться
                 OnPropertyChanged(nameof(SpendingBarChart));
             }
-            // Если _spendingBarChart == null или другого типа, можно добавить логику создания
-            // else { /* Логика создания, если нужно */ }
         }
 
         [RelayCommand]
