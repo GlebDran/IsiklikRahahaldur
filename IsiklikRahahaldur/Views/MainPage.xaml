@@ -6,64 +6,71 @@
              x:Class="IsiklikRahahaldur.Views.MainPage"
              Title="{Binding Title}">
 
-    <Grid RowDefinitions="Auto, Auto, Auto, *, Auto" Padding="20" RowSpacing="15">
+    <Grid RowDefinitions="Auto, Auto, Auto, Auto, *, Auto" Padding="15" RowSpacing="10">
 
         <HorizontalStackLayout Grid.Row="0" HorizontalOptions="Center" Spacing="10" VerticalOptions="Center">
             <Label Text="Мой кошелек" FontSize="32" FontAttributes="Bold" />
-
             <Button Text="⚙️"
                     Command="{Binding GoToCategoriesCommand}"
-                    FontSize="20"
-                    Padding="0"
-                    WidthRequest="44"
-                    HeightRequest="44"
-                    BackgroundColor="Transparent"
-                    BorderColor="LightGray"
-                    BorderWidth="1"
+                    FontSize="20" Padding="0" WidthRequest="44" HeightRequest="44"
+                    BackgroundColor="Transparent" BorderColor="LightGray" BorderWidth="1"
                     TextColor="{AppThemeBinding Light=Black, Dark=White}" />
         </HorizontalStackLayout>
 
-        <Border Grid.Row="1" StrokeShape="RoundRectangle 15" Padding="20" Stroke="LightGray">
+        <Border Grid.Row="1" StrokeShape="RoundRectangle 15" Padding="15,10" Stroke="LightGray">
             <VerticalStackLayout>
-                <Label Text="Текущий баланс" FontSize="16" TextColor="Gray"/>
-                <Label Text="{Binding Balance, StringFormat='{0:F2} €'}" FontSize="28" FontAttributes="Bold" HorizontalOptions="Center" />
+                <Label Text="Текущий баланс" FontSize="14" TextColor="Gray"/>
+                <Label Text="{Binding Balance, StringFormat='{0:F2} €'}" FontSize="24" FontAttributes="Bold" HorizontalOptions="Center" />
             </VerticalStackLayout>
         </Border>
 
-        <microcharts:ChartView Grid.Row="2"
-                               Chart="{Binding ExpensesChart}"
-                               HeightRequest="150" />
+        <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,5">
+            <HorizontalStackLayout Spacing="8">
+                <Button Text="Сегодня" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+                <Button Text="Неделя" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+                <Button Text="Месяц" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+                <Button Text="Год" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+                <Button Text="Все" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+                <Button Text="Выбрать..." CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
+            </HorizontalStackLayout>
+        </ScrollView>
 
-        <CollectionView Grid.Row="3" ItemsSource="{Binding Transactions}" Margin="0,10,0,0">
+        <microcharts:ChartView Grid.Row="3"
+                               Chart="{Binding ExpensesChart}"
+                               HeightRequest="130" />
+        <CollectionView Grid.Row="4" ItemsSource="{Binding Transactions}" Margin="0,5,0,0">
+            <CollectionView.EmptyView>
+                <Label Text="Нет транзакций за выбранный период." HorizontalOptions="Center" VerticalOptions="Center" TextColor="Gray" Margin="0,20"/>
+            </CollectionView.EmptyView>
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
                     <SwipeView>
                         <SwipeView.LeftItems>
                             <SwipeItems Mode="Execute">
-                                <SwipeItem Text="Изменить"
-                                           BackgroundColor="LightSkyBlue"
+                                <SwipeItem Text="Изменить" BackgroundColor="LightSkyBlue"
                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=GoToEditTransactionCommand}"
                                            CommandParameter="{Binding .}"/>
                             </SwipeItems>
                         </SwipeView.LeftItems>
-
                         <SwipeView.RightItems>
                             <SwipeItems Mode="Execute">
-                                <SwipeItem Text="Удалить"
-                                           BackgroundColor="IndianRed"
+                                <SwipeItem Text="Удалить" BackgroundColor="IndianRed"
                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DeleteTransactionCommand}"
                                            CommandParameter="{Binding .}"/>
                             </SwipeItems>
                         </SwipeView.RightItems>
 
-                        <Border Padding="10" Margin="0,5" StrokeShape="RoundRectangle 10" Stroke="Gainsboro">
+                        <Border Padding="10" Margin="0,3" StrokeShape="RoundRectangle 8" Stroke="Gainsboro">
                             <Grid ColumnDefinitions="*, Auto">
-                                <VerticalStackLayout Grid.Column="0">
-                                    <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" />
-                                    <Label Text="{Binding CategoryName}" FontSize="12" TextColor="Gray" />
-                                    <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yyyy}'}" FontSize="12" TextColor="LightSlateGray" />
+                                <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                    <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" FontSize="14"/>
+                                    <HorizontalStackLayout Spacing="5">
+                                        <Label Text="{Binding CategoryName}" FontSize="11" TextColor="Gray" />
+                                        <Label Text="|" FontSize="11" TextColor="LightGray" />
+                                        <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yy HH:mm}'}" FontSize="11" TextColor="LightSlateGray" />
+                                    </HorizontalStackLayout>
                                 </VerticalStackLayout>
-                                <Label Grid.Column="1" VerticalOptions="Center" FontAttributes="Bold"
+                                <Label Grid.Column="1" VerticalOptions="Center" FontAttributes="Bold" FontSize="14"
                                        TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
                                     <Label.Text>
                                         <MultiBinding StringFormat="{}{0}{1:F2} €">
@@ -79,17 +86,9 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
 
-        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="10">
-            <Button Grid.Column="0" Text="+ Доход" Command="{Binding GoToAddTransactionCommand}" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10">
-                <Button.CommandParameter>
-                    <x:Boolean>True</x:Boolean>
-                </Button.CommandParameter>
-            </Button>
-            <Button Grid.Column="1" Text="- Расход" Command="{Binding GoToAddTransactionCommand}" BackgroundColor="IndianRed" TextColor="White" CornerRadius="10">
-                <Button.CommandParameter>
-                    <x:Boolean>False</x:Boolean>
-                </Button.CommandParameter>
-            </Button>
+        <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,5,0,0">
+            <Button Grid.Column="0" Text="+ Доход" Command="{Binding GoToAddTransactionCommand}" CommandParameter="True" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10"/>
+            <Button Grid.Column="1" Text="- Расход" Command="{Binding GoToAddTransactionCommand}" CommandParameter="False" BackgroundColor="IndianRed" TextColor="White" CornerRadius="10"/>
         </Grid>
     </Grid>
 

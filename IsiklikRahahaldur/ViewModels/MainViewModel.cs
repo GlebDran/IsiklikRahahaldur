@@ -10,6 +10,7 @@ using Microcharts;
 using SkiaSharp;
 using System.Collections.Generic;
 using System;
+using System.Globalization; // <-- Добавлен using для CultureInfo
 
 namespace IsiklikRahahaldur.ViewModels
 {
@@ -23,11 +24,20 @@ namespace IsiklikRahahaldur.ViewModels
         [ObservableProperty]
         private decimal _balance;
 
-        // --- НОВОЕ СВОЙСТВО ДЛЯ ГРАФИКА ---
         [ObservableProperty]
         private Chart _expensesChart;
 
-        // Список для хранения цветов категорий
+        // --- НОВОЕ: Свойства для фильтра и сумм за период ---
+        [ObservableProperty]
+        private TimePeriod _selectedPeriod = TimePeriod.Month; // По умолчанию показываем за месяц
+
+        [ObservableProperty]
+        private decimal _periodIncome;
+
+        [ObservableProperty]
+        private decimal _periodExpense;
+        // --- КОНЕЦ НОВОГО ---
+
         private Dictionary<string, SKColor> _categoryColors = new Dictionary<string, SKColor>();
         private Random _random = new Random();
 
@@ -36,47 +46,117 @@ namespace IsiklikRahahaldur.ViewModels
             _databaseService = databaseService;
             Title = "Мой кошелек";
             Transactions = new ObservableCollection<TransactionDisplayViewModel>();
-            // Инициализируем пустой график, чтобы не было ошибок при запуске
             ExpensesChart = new PieChart { Entries = new List<ChartEntry>() };
         }
 
+        // --- НОВОЕ: Команда для смены периода ---
+        [RelayCommand]
+        private async Task SetPeriodAsync(string period)
+        {
+            TimePeriod newPeriod;
+            switch (period?.ToLower())
+            {
+                case "today": newPeriod = TimePeriod.Today; break;
+                case "week": newPeriod = TimePeriod.Week; break;
+                case "month": newPeriod = TimePeriod.Month; break;
+                case "year": newPeriod = TimePeriod.Year; break;
+                case "all": newPeriod = TimePeriod.All; break;
+                // TODO: Добавить обработку "custom" / "Выбрать..."
+                default: newPeriod = TimePeriod.Month; break; // По умолчанию - месяц
+            }
+
+            if (SelectedPeriod != newPeriod)
+            {
+                SelectedPeriod = newPeriod;
+                await LoadTransactionsAsync(); // Перезагружаем транзакции для нового периода
+            }
+        }
+        // --- КОНЕЦ НОВОГО ---
+
+        // --- ИЗМЕНЕНО: Добавлена фильтрация и управление IsBusy ---
         [RelayCommand]
         private async Task LoadTransactionsAsync()
         {
-            var transactionsFromDb = await _databaseService.GetTransactionsAsync();
-            var categoriesFromDb = await _databaseService.GetCategoriesAsync();
-            var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
+            if (IsBusy) return; // Предотвращаем повторный запуск, если уже загружается
 
-            Transactions.Clear();
-            List<Transaction> currentTransactions = new List<Transaction>(); // Список для расчета
-
-            foreach (var t in transactionsFromDb.OrderByDescending(x => x.Date))
+            IsBusy = true;
+            try // Оборачиваем в try..finally для управления IsBusy
             {
-                Transactions.Add(new TransactionDisplayViewModel
+                var transactionsFromDb = await _databaseService.GetTransactionsAsync();
+                var categoriesFromDb = await _databaseService.GetCategoriesAsync();
+                var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
+
+                // Фильтрация по дате
+                DateTime startDate = DateTime.MinValue;
+                DateTime endDate = DateTime.MaxValue;
+                var now = DateTime.Now;
+
+                switch (SelectedPeriod)
                 {
-                    Transaction = t,
-                    CategoryName = categoriesDict.TryGetValue(t.CategoryId, out var name) ? name : "Без категории"
-                });
-                currentTransactions.Add(t);
+                    case TimePeriod.Today:
+                        startDate = now.Date;
+                        endDate = startDate.AddDays(1);
+                        break;
+                    case TimePeriod.Week:
+                        // Неделя начинается с понедельника (для CultureInfo "et-EE")
+                        int diff = (7 + (now.DayOfWeek - CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek)) % 7;
+                        startDate = now.AddDays(-1 * diff).Date;
+                        endDate = startDate.AddDays(7);
+                        break;
+                    case TimePeriod.Month:
+                        startDate = new DateTime(now.Year, now.Month, 1);
+                        endDate = startDate.AddMonths(1);
+                        break;
+                    case TimePeriod.Year:
+                        startDate = new DateTime(now.Year, 1, 1);
+                        endDate = startDate.AddYears(1);
+                        break;
+                    case TimePeriod.All:
+                        // startDate и endDate уже Min/Max Value
+                        break;
+                        // TODO: Обработка TimePeriod.Custom
+                }
+
+                // Отбираем транзакции за нужный период
+                var filteredTransactions = transactionsFromDb
+                    .Where(t => t.Date >= startDate && t.Date < endDate) // Используем >= и <
+                    .OrderByDescending(x => x.Date)
+                    .ToList();
+
+                Transactions.Clear();
+                // Используем отфильтрованный список filteredTransactions
+                foreach (var t in filteredTransactions)
+                {
+                    Transactions.Add(new TransactionDisplayViewModel
+                    {
+                        Transaction = t,
+                        CategoryName = categoriesDict.TryGetValue(t.CategoryId, out var name) ? name : "Без категории"
+                    });
+                }
+
+                // Передаем отфильтрованный список для расчетов
+                CalculateBalanceAndTotals(filteredTransactions);
+                UpdateChart(filteredTransactions, categoriesDict);
             }
-
-            CalculateBalance(currentTransactions);
-            UpdateChart(currentTransactions, categoriesDict); // Обновляем график
+            finally
+            {
+                IsBusy = false; // Убеждаемся, что IsBusy сбросится, даже если была ошибка
+            }
         }
 
-        // Принимает список транзакций, чтобы не обращаться к свойству Transactions
-        private void CalculateBalance(List<Transaction> transactions)
+        // --- ИЗМЕНЕНО: Переименован и обновлен для расчета сумм за период ---
+        private void CalculateBalanceAndTotals(List<Transaction> transactions)
         {
-            decimal totalIncome = transactions.Where(t => t.IsIncome).Sum(t => t.Amount);
-            decimal totalExpense = transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
-            Balance = totalIncome - totalExpense;
+            PeriodIncome = transactions.Where(t => t.IsIncome).Sum(t => t.Amount);
+            PeriodExpense = transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+            Balance = PeriodIncome - PeriodExpense; // Баланс тоже считаем по отфильтрованным
         }
 
-        // Метод для обновления данных графика
+        // --- ИЗМЕНЕНО: Теперь принимает список транзакций ---
         private void UpdateChart(List<Transaction> transactions, Dictionary<int, string> categoryNames)
         {
-            var expenseEntries = transactions
-                .Where(t => !t.IsIncome && t.CategoryId != 0) // Берем только расходы с категориями
+            var expenseEntries = transactions // Используем переданный список
+                .Where(t => !t.IsIncome && t.CategoryId != 0)
                 .GroupBy(t => t.CategoryId)
                 .Select(group =>
                 {
@@ -84,8 +164,8 @@ namespace IsiklikRahahaldur.ViewModels
                     return new ChartEntry((float)group.Sum(t => t.Amount))
                     {
                         Label = categoryName,
-                        ValueLabel = group.Sum(t => t.Amount).ToString("F2") + " €",
-                        Color = GetCategoryColor(categoryName) // Используем постоянный цвет для категории
+                        ValueLabel = group.Sum(t => t.Amount).ToString("F2", CultureInfo.CurrentCulture) + " €", // Добавил CultureInfo
+                        Color = GetCategoryColor(categoryName)
                     };
                 })
                 .ToList();
@@ -93,26 +173,22 @@ namespace IsiklikRahahaldur.ViewModels
             ExpensesChart = new PieChart
             {
                 Entries = expenseEntries,
-                LabelTextSize = 28f, // Немного увеличим шрифт
+                LabelTextSize = 28f,
                 BackgroundColor = SKColors.Transparent,
-                LabelMode = LabelMode.RightOnly // Метки справа от графика
+                LabelMode = LabelMode.RightOnly
             };
         }
 
-        // Вспомогательный метод для получения постоянного случайного цвета для категории
         private SKColor GetCategoryColor(string categoryName)
         {
             if (_categoryColors.TryGetValue(categoryName, out var color))
             {
                 return color;
             }
-
-            // Генерируем красивый, не слишком темный цвет
             color = new SKColor((byte)_random.Next(100, 256), (byte)_random.Next(100, 256), (byte)_random.Next(100, 256));
             _categoryColors[categoryName] = color;
             return color;
         }
-
 
         [RelayCommand]
         private async Task GoToAddTransactionAsync(bool isIncome)
@@ -134,8 +210,7 @@ namespace IsiklikRahahaldur.ViewModels
             if (!answer) return;
 
             await _databaseService.DeleteTransactionAsync(transactionVM.Transaction);
-            // Перезагружаем все данные, чтобы обновить и список, и график
-            await LoadTransactionsAsync();
+            await LoadTransactionsAsync(); // Перезагружаем данные с учетом текущего фильтра
         }
 
         [RelayCommand]
@@ -149,6 +224,7 @@ namespace IsiklikRahahaldur.ViewModels
             };
             await Shell.Current.GoToAsync(nameof(AddTransactionPage), navigationParameter);
         }
+
         [RelayCommand]
         private async Task GoToCategoriesAsync()
         {
@@ -156,4 +232,3 @@ namespace IsiklikRahahaldur.ViewModels
         }
     }
 }
-
