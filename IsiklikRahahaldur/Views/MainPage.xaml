@@ -22,13 +22,13 @@
                    FontFamily="OpenSansSemibold"
                    VerticalOptions="Center"/>
 
-            <ImageButton Grid.Column="1"
-                         Source="settings_icon.png"  Command="{Binding GoToCategoriesCommand}"
-                         HeightRequest="24" WidthRequest="24"
-                         BackgroundColor="Transparent"
-                         BorderWidth="0"
-                         Padding="5" Aspect="AspectFit"
-                         VerticalOptions="Center">
+            <ImageButton Source="add_money_icon.png"
+              Style="{StaticResource QuickActionIcon}"
+              Command="{Binding GoToAddTransactionCommand}"
+              CommandParameter="{x:Boolean True}">
+                <ImageButton.Behaviors>
+                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
+                </ImageButton.Behaviors>
             </ImageButton>
         </Grid>
 
@@ -71,7 +71,7 @@
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
-                            <ImageButton Source="add_money_icon.png" Style="{StaticResource QuickActionIcon}" Command="{Binding GoToAddTransactionCommand}" CommandParameter="True">
+                            <ImageButton Source="add_money_icon.png" Style="{StaticResource QuickActionIcon}" Command="{Binding GoToAddTransactionCommand}" CommandParameter="{x:Boolean True}">
                                 <ImageButton.Behaviors>
                                     <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
                                 </ImageButton.Behaviors>
