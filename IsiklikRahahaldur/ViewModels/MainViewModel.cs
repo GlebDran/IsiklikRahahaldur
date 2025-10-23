@@ -43,9 +43,25 @@ namespace IsiklikRahahaldur.ViewModels
             _databaseService = databaseService;
             Title = "Мой кошелек";
             Transactions = new ObservableCollection<TransactionDisplayViewModel>();
+
+            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
+            // Создаем начальный список с нулями, чтобы график не был пустым
+            var initialEntries = new List<ChartEntry>();
+            string[] dayLabels = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
+
+            for (int i = 0; i < dayLabels.Length; i++)
+            {
+                initialEntries.Add(new ChartEntry(0)
+                {
+                    Label = dayLabels[i],
+                    ValueLabel = "0",
+                    Color = _barChartColor
+                });
+            }
+
             SpendingBarChart = new BarChart
             {
-                Entries = new List<ChartEntry>(),
+                Entries = initialEntries, // <-- ТЕПЕРЬ СПИСОК НЕ ПУСТОЙ
                 LabelTextSize = 12f,
                 ValueLabelTextSize = 12f,
                 BackgroundColor = SKColors.Transparent,
