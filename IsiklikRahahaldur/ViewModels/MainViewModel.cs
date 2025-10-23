@@ -155,21 +155,26 @@ namespace IsiklikRahahaldur.ViewModels
         // --- ИЗМЕНЕНО: Теперь принимает список транзакций ---
         private void UpdateChart(List<Transaction> transactions, Dictionary<int, string> categoryNames)
         {
-            var expenseEntries = transactions // Используем переданный список
+            var expenseEntries = transactions
                 .Where(t => !t.IsIncome && t.CategoryId != 0)
                 .GroupBy(t => t.CategoryId)
                 .Select(group =>
                 {
                     string categoryName = categoryNames.TryGetValue(group.Key, out var name) ? name : "Категория?";
+                    // --- ИЗМЕНИ ЭТУ СТРОКУ ---
+                    string valueLabel = group.Sum(t => t.Amount).ToString("F2") + " €";
+                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
+
                     return new ChartEntry((float)group.Sum(t => t.Amount))
                     {
                         Label = categoryName,
-                        ValueLabel = group.Sum(t => t.Amount).ToString("F2", CultureInfo.CurrentCulture) + " €", // Добавил CultureInfo
+                        ValueLabel = valueLabel, // Используем переменную
                         Color = GetCategoryColor(categoryName)
                     };
                 })
                 .ToList();
 
+            // Остальной код метода без изменений...
             ExpensesChart = new PieChart
             {
                 Entries = expenseEntries,
