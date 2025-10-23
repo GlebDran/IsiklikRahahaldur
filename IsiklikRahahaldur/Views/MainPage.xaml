@@ -2,94 +2,160 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
+             xmlns:models="clr-namespace:IsiklikRahahaldur.Models"
              xmlns:microcharts="clr-namespace:Microcharts.Maui;assembly=Microcharts.Maui"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
              x:Class="IsiklikRahahaldur.Views.MainPage"
-             Title="{Binding Title}">
+             x:DataType="vm:MainViewModel"
+             Title="{Binding Title}"
+             Shell.NavBarIsVisible="False">
+    <Grid RowDefinitions="Auto, *" RowSpacing="0">
+        <Grid Grid.Row="0" BackgroundColor="{StaticResource HeaderBlue}" Padding="15,10" HeightRequest="60">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-    <Grid RowDefinitions="Auto, Auto, Auto, Auto, *, Auto" Padding="15" RowSpacing="10">
+            <Label Grid.Column="0"
+                   Text="Мой кошелек" TextColor="{StaticResource HeaderText}"
+                   FontSize="20"
+                   FontFamily="OpenSansSemibold"
+                   VerticalOptions="Center"/>
 
-        <HorizontalStackLayout Grid.Row="0" HorizontalOptions="Center" Spacing="10" VerticalOptions="Center">
-            <Label Text="Мой кошелек" FontSize="32" FontAttributes="Bold" />
-            <Button Text="⚙️"
-                    Command="{Binding GoToCategoriesCommand}"
-                    FontSize="20" Padding="0" WidthRequest="44" HeightRequest="44"
-                    BackgroundColor="Transparent" BorderColor="LightGray" BorderWidth="1"
-                    TextColor="{AppThemeBinding Light=Black, Dark=White}" />
-        </HorizontalStackLayout>
-
-        <Border Grid.Row="1" StrokeShape="RoundRectangle 15" Padding="15,10" Stroke="LightGray">
-            <VerticalStackLayout>
-                <Label Text="Текущий баланс" FontSize="14" TextColor="Gray"/>
-                <Label Text="{Binding Balance, StringFormat='{0:F2} €'}" FontSize="24" FontAttributes="Bold" HorizontalOptions="Center" />
-            </VerticalStackLayout>
-        </Border>
-
-        <ScrollView Grid.Row="2" Orientation="Horizontal" HorizontalScrollBarVisibility="Never" Margin="0,5">
-            <HorizontalStackLayout Spacing="8">
-                <Button Text="Сегодня" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-                <Button Text="Неделя" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-                <Button Text="Месяц" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-                <Button Text="Год" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-                <Button Text="Все" CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-                <Button Text="Выбрать..." CornerRadius="15" FontSize="12" Padding="10,5" MinimumHeightRequest="30"/>
-            </HorizontalStackLayout>
-        </ScrollView>
-
-        <microcharts:ChartView Grid.Row="3"
-                               Chart="{Binding ExpensesChart}"
-                               HeightRequest="130" />
-        <CollectionView Grid.Row="4" ItemsSource="{Binding Transactions}" Margin="0,5,0,0">
-            <CollectionView.EmptyView>
-                <Label Text="Нет транзакций за выбранный период." HorizontalOptions="Center" VerticalOptions="Center" TextColor="Gray" Margin="0,20"/>
-            </CollectionView.EmptyView>
-            <CollectionView.ItemTemplate>
-                <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
-                    <SwipeView>
-                        <SwipeView.LeftItems>
-                            <SwipeItems Mode="Execute">
-                                <SwipeItem Text="Изменить" BackgroundColor="LightSkyBlue"
-                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=GoToEditTransactionCommand}"
-                                           CommandParameter="{Binding .}"/>
-                            </SwipeItems>
-                        </SwipeView.LeftItems>
-                        <SwipeView.RightItems>
-                            <SwipeItems Mode="Execute">
-                                <SwipeItem Text="Удалить" BackgroundColor="IndianRed"
-                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DeleteTransactionCommand}"
-                                           CommandParameter="{Binding .}"/>
-                            </SwipeItems>
-                        </SwipeView.RightItems>
-
-                        <Border Padding="10" Margin="0,3" StrokeShape="RoundRectangle 8" Stroke="Gainsboro">
-                            <Grid ColumnDefinitions="*, Auto">
-                                <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                    <Label Text="{Binding Transaction.Description}" FontAttributes="Bold" FontSize="14"/>
-                                    <HorizontalStackLayout Spacing="5">
-                                        <Label Text="{Binding CategoryName}" FontSize="11" TextColor="Gray" />
-                                        <Label Text="|" FontSize="11" TextColor="LightGray" />
-                                        <Label Text="{Binding Transaction.Date, StringFormat='{0:dd.MM.yy HH:mm}'}" FontSize="11" TextColor="LightSlateGray" />
-                                    </HorizontalStackLayout>
-                                </VerticalStackLayout>
-                                <Label Grid.Column="1" VerticalOptions="Center" FontAttributes="Bold" FontSize="14"
-                                       TextColor="{Binding Transaction.IsIncome, Converter={StaticResource BoolToColorConverter}}">
-                                    <Label.Text>
-                                        <MultiBinding StringFormat="{}{0}{1:F2} €">
-                                            <Binding Path="Transaction.IsIncome" Converter="{StaticResource BoolToSignConverter}" />
-                                            <Binding Path="Transaction.Amount" />
-                                        </MultiBinding>
-                                    </Label.Text>
-                                </Label>
-                            </Grid>
-                        </Border>
-                    </SwipeView>
-                </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-
-        <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,5,0,0">
-            <Button Grid.Column="0" Text="+ Доход" Command="{Binding GoToAddTransactionCommand}" CommandParameter="True" BackgroundColor="MediumSeaGreen" TextColor="White" CornerRadius="10"/>
-            <Button Grid.Column="1" Text="- Расход" Command="{Binding GoToAddTransactionCommand}" CommandParameter="False" BackgroundColor="IndianRed" TextColor="White" CornerRadius="10"/>
+            <ImageButton Grid.Column="1"
+                         Source="settings_icon.png"  Command="{Binding GoToCategoriesCommand}"
+                         HeightRequest="24" WidthRequest="24"
+                         BackgroundColor="Transparent"
+                         BorderWidth="0"
+                         Padding="5" Aspect="AspectFit"
+                         VerticalOptions="Center">
+            </ImageButton>
         </Grid>
+
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="0" Padding="0,0,0,15">
+                <Border Style="{StaticResource InfoCard}">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Текущий баланс"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"/>
+                        <Label Text="{Binding Balance, StringFormat='{0:N2} €'}"
+                               FontSize="32" FontFamily="OpenSansSemibold"
+                               HorizontalOptions="Start"
+                               TextColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"/>
+                        <Label Text="{Binding PeriodIncome, StringFormat='+{0:N2} € this month', Mode=OneWay}"
+                               FontSize="12"
+                               TextColor="{StaticResource AccentGreen}"
+                               IsVisible="{Binding IsNotBusy}"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource InfoCard}">
+                    <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
+                        <VerticalStackLayout Grid.Column="0" Spacing="8" Margin="0,5">
+                            <Image Source="send_money_icon.png" Style="{StaticResource QuickActionIcon}">
+                                <Image.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
+                                </Image.Behaviors>
+                            </Image>
+                            <Label Text="Send Money" Style="{StaticResource QuickActionLabel}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="8" Margin="0,5">
+                            <Image Source="pay_bills_icon.png" Style="{StaticResource QuickActionIcon}">
+                                <Image.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
+                                </Image.Behaviors>
+                            </Image>
+                            <Label Text="Pay Bills" Style="{StaticResource QuickActionLabel}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
+                            <ImageButton Source="add_money_icon.png" Style="{StaticResource QuickActionIcon}" Command="{Binding GoToAddTransactionCommand}" CommandParameter="True">
+                                <ImageButton.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
+                                </ImageButton.Behaviors>
+                            </ImageButton>
+                            <Label Text="Add Money" Style="{StaticResource QuickActionLabel}"/>
+                        </VerticalStackLayout>
+                    </Grid>
+                </Border>
+
+                <Border Style="{StaticResource InfoCard}">
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Weekly Spending" FontSize="16" FontFamily="OpenSansSemibold"/>
+                        <Label Text="{Binding PeriodExpense, StringFormat='Total: {0:N2} €', Mode=OneWay}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" IsVisible="{Binding IsNotBusy}"/>
+
+                        <microcharts:ChartView x:Name="barChartView" HeightRequest="150">
+                        </microcharts:ChartView>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Border Style="{StaticResource InfoCard}">
+                    <VerticalStackLayout Spacing="12">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <Label Grid.Column="0" Text="Recent Transactions" FontSize="16" FontFamily="OpenSansSemibold" VerticalOptions="Center"/>
+                            <Button Grid.Column="1" Text="See All" FontSize="12" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Padding="0" VerticalOptions="Center" FontFamily="OpenSansSemibold"/>
+                        </Grid>
+
+                        <CollectionView ItemsSource="{Binding Transactions}" Margin="0" SelectionMode="None" MaximumHeightRequest="300">
+                            <CollectionView.EmptyView>
+                                <Label Text="No transactions for the selected period."
+                                       HorizontalOptions="Center" VerticalOptions="Center" Margin="0,20"
+                                       TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"/>
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:TransactionDisplayViewModel">
+                                    <SwipeView Margin="0,0,0,5">
+                                        <SwipeView.LeftItems>
+                                            <SwipeItems Mode="Execute">
+                                                <SwipeItem Text="Edit" BackgroundColor="LightSkyBlue"
+                                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=GoToEditTransactionCommand}"
+                                                           CommandParameter="{Binding .}"/>
+                                            </SwipeItems>
+                                        </SwipeView.LeftItems>
+                                        <SwipeView.RightItems>
+                                            <SwipeItems Mode="Execute">
+                                                <SwipeItem Text="Delete" BackgroundColor="IndianRed"
+                                                           Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DeleteTransactionCommand}"
+                                                           CommandParameter="{Binding .}"/>
+                                            </SwipeItems>
+                                        </SwipeView.RightItems>
+
+                                        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="12" Padding="10, 5">
+                                            <Border Grid.Column="0" StrokeShape="RoundRectangle 20" HeightRequest="40" WidthRequest="40" Padding="8" BackgroundColor="{AppThemeBinding Light=#F0F0F0, Dark=#333333}" StrokeThickness="0" VerticalOptions="Center">
+                                                <Image Source="default_category_icon.png" Aspect="AspectFit"/>
+                                            </Border>
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                <Label Text="{Binding Transaction.Description}" Style="{StaticResource TransactionDescriptionLabel}"/>
+                                                <Label Text="{Binding Transaction.Date, StringFormat='{0:MMM dd, yyyy}'}" Style="{StaticResource TransactionDetailLabel}" />
+                                            </VerticalStackLayout>
+
+                                            <Label Grid.Column="2" VerticalOptions="Center" Style="{StaticResource TransactionAmountLabel}">
+                                                <Label.Text>
+                                                    <MultiBinding StringFormat="{}{0}{1:N2} €">
+                                                        <Binding Path="Transaction.IsIncome" Converter="{StaticResource BoolToSignConverter}" />
+                                                        <Binding Path="Transaction.Amount" />
+                                                    </MultiBinding>
+                                                </Label.Text>
+                                                <Label.TextColor>
+                                                    <Binding Path="Transaction.IsIncome">
+                                                        <Binding.Converter>
+                                                            <toolkit:BoolToObjectConverter TrueObject="{StaticResource AccentGreen}" FalseObject="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"/>
+                                                        </Binding.Converter>
+                                                    </Binding>
+                                                </Label.TextColor>
+                                            </Label>
+                                        </Grid>
+                                    </SwipeView>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </VerticalStackLayout>
+                </Border>
+            </VerticalStackLayout>
+        </ScrollView>
     </Grid>
 
 </ContentPage>

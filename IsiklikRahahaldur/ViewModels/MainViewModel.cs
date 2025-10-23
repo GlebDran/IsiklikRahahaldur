@@ -6,11 +6,11 @@ using IsiklikRahahaldur.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using Microcharts;
-using SkiaSharp;
+using Microcharts; // Убедитесь, что using есть
+using SkiaSharp; // Убедитесь, что using есть
 using System.Collections.Generic;
 using System;
-using System.Globalization; // <-- Добавлен using для CultureInfo
+using System.Globalization; // Using для CultureInfo
 
 namespace IsiklikRahahaldur.ViewModels
 {
@@ -25,20 +25,19 @@ namespace IsiklikRahahaldur.ViewModels
         private decimal _balance;
 
         [ObservableProperty]
-        private Chart _expensesChart;
+        private Chart _spendingBarChart; // Используем BarChart
 
-        // --- НОВОЕ: Свойства для фильтра и сумм за период ---
         [ObservableProperty]
-        private TimePeriod _selectedPeriod = TimePeriod.Month; // По умолчанию показываем за месяц
+        private TimePeriod _selectedPeriod = TimePeriod.Week; // По умолчанию - неделя
 
         [ObservableProperty]
         private decimal _periodIncome;
 
         [ObservableProperty]
         private decimal _periodExpense;
-        // --- КОНЕЦ НОВОГО ---
 
-        private Dictionary<string, SKColor> _categoryColors = new Dictionary<string, SKColor>();
+        private readonly SKColor _barChartColor = SKColor.Parse("#2ECC71"); // Зеленый из макета
+
         private Random _random = new Random();
 
         public MainViewModel(DatabaseService databaseService)
@@ -46,50 +45,64 @@ namespace IsiklikRahahaldur.ViewModels
             _databaseService = databaseService;
             Title = "Мой кошелек";
             Transactions = new ObservableCollection<TransactionDisplayViewModel>();
-            ExpensesChart = new PieChart { Entries = new List<ChartEntry>() };
+            SpendingBarChart = new BarChart { Entries = new List<ChartEntry>() };
+            // Загружаем данные при инициализации, если нужно
+            // Task.Run(async () => await LoadTransactionsAsync());
         }
 
-        // --- НОВОЕ: Команда для смены периода ---
         [RelayCommand]
         private async Task SetPeriodAsync(string period)
         {
             TimePeriod newPeriod;
-            switch (period?.ToLower())
+            switch (period?.ToLower()) // Используем ToLower для надежности
             {
-                case "today": newPeriod = TimePeriod.Today; break;
-                case "week": newPeriod = TimePeriod.Week; break;
-                case "month": newPeriod = TimePeriod.Month; break;
-                case "year": newPeriod = TimePeriod.Year; break;
-                case "all": newPeriod = TimePeriod.All; break;
+                // --- ИЗМЕНЕНО: Добавляем русские варианты ---
+                case "today":
+                case "сегодня":
+                    newPeriod = TimePeriod.Today; break;
+                case "week":
+                case "неделя":
+                    newPeriod = TimePeriod.Week; break;
+                case "month":
+                case "месяц":
+                    newPeriod = TimePeriod.Month; break;
+                case "year":
+                case "год":
+                    newPeriod = TimePeriod.Year; break;
+                case "all":
+                case "все":
+                    newPeriod = TimePeriod.All; break;
                 // TODO: Добавить обработку "custom" / "Выбрать..."
-                default: newPeriod = TimePeriod.Month; break; // По умолчанию - месяц
+                default: newPeriod = TimePeriod.Week; break; // По умолчанию - неделя
             }
+
 
             if (SelectedPeriod != newPeriod)
             {
                 SelectedPeriod = newPeriod;
-                await LoadTransactionsAsync(); // Перезагружаем транзакции для нового периода
+                await LoadTransactionsAsync();
             }
         }
-        // --- КОНЕЦ НОВОГО ---
 
-        // --- ИЗМЕНЕНО: Добавлена фильтрация и управление IsBusy ---
         [RelayCommand]
-        private async Task LoadTransactionsAsync()
+        public async Task LoadTransactionsAsync() // Сделал public
         {
-            if (IsBusy) return; // Предотвращаем повторный запуск, если уже загружается
+            if (IsBusy) return;
 
             IsBusy = true;
-            try // Оборачиваем в try..finally для управления IsBusy
+            try
             {
                 var transactionsFromDb = await _databaseService.GetTransactionsAsync();
                 var categoriesFromDb = await _databaseService.GetCategoriesAsync();
                 var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
 
-                // Фильтрация по дате
                 DateTime startDate = DateTime.MinValue;
                 DateTime endDate = DateTime.MaxValue;
                 var now = DateTime.Now;
+
+                // Используем текущую культуру приложения (установлена в App.xaml.cs)
+                var currentCulture = CultureInfo.CurrentCulture;
+                var firstDayOfWeek = currentCulture.DateTimeFormat.FirstDayOfWeek; // В et-EE это Понедельник
 
                 switch (SelectedPeriod)
                 {
@@ -98,9 +111,9 @@ namespace IsiklikRahahaldur.ViewModels
                         endDate = startDate.AddDays(1);
                         break;
                     case TimePeriod.Week:
-                        // Неделя начинается с понедельника (для CultureInfo "et-EE")
-                        int diff = (7 + (now.DayOfWeek - CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek)) % 7;
-                        startDate = now.AddDays(-1 * diff).Date;
+                        // Рассчитываем начало недели относительно первого дня в культуре
+                        int diff = (7 + (int)now.DayOfWeek - (int)firstDayOfWeek) % 7;
+                        startDate = now.AddDays(-diff).Date;
                         endDate = startDate.AddDays(7);
                         break;
                     case TimePeriod.Month:
@@ -117,14 +130,13 @@ namespace IsiklikRahahaldur.ViewModels
                         // TODO: Обработка TimePeriod.Custom
                 }
 
-                // Отбираем транзакции за нужный период
+
                 var filteredTransactions = transactionsFromDb
-                    .Where(t => t.Date >= startDate && t.Date < endDate) // Используем >= и <
+                    .Where(t => t.Date >= startDate && t.Date < endDate)
                     .OrderByDescending(x => x.Date)
                     .ToList();
 
                 Transactions.Clear();
-                // Используем отфильтрованный список filteredTransactions
                 foreach (var t in filteredTransactions)
                 {
                     Transactions.Add(new TransactionDisplayViewModel
@@ -134,65 +146,68 @@ namespace IsiklikRahahaldur.ViewModels
                     });
                 }
 
-                // Передаем отфильтрованный список для расчетов
-                CalculateBalanceAndTotals(filteredTransactions);
-                UpdateChart(filteredTransactions, categoriesDict);
+                CalculateBalanceAndTotals(transactionsFromDb); // Общий баланс
+                CalculatePeriodTotals(filteredTransactions); // Суммы за период
+                UpdateBarChart(filteredTransactions, startDate); // Обновляем график
             }
             finally
             {
-                IsBusy = false; // Убеждаемся, что IsBusy сбросится, даже если была ошибка
+                IsBusy = false;
             }
         }
 
-        // --- ИЗМЕНЕНО: Переименован и обновлен для расчета сумм за период ---
-        private void CalculateBalanceAndTotals(List<Transaction> transactions)
+        private void CalculateBalanceAndTotals(List<Transaction> allTransactions)
         {
-            PeriodIncome = transactions.Where(t => t.IsIncome).Sum(t => t.Amount);
-            PeriodExpense = transactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
-            Balance = PeriodIncome - PeriodExpense; // Баланс тоже считаем по отфильтрованным
+            decimal totalIncome = allTransactions.Where(t => t.IsIncome).Sum(t => t.Amount);
+            decimal totalExpense = allTransactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+            Balance = totalIncome - totalExpense;
         }
 
-        // --- ИЗМЕНЕНО: Теперь принимает список транзакций ---
-        private void UpdateChart(List<Transaction> transactions, Dictionary<int, string> categoryNames)
+        private void CalculatePeriodTotals(List<Transaction> periodTransactions)
         {
-            var expenseEntries = transactions
-                .Where(t => !t.IsIncome && t.CategoryId != 0)
-                .GroupBy(t => t.CategoryId)
-                .Select(group =>
+            PeriodIncome = periodTransactions.Where(t => t.IsIncome).Sum(t => t.Amount);
+            PeriodExpense = periodTransactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
+        }
+
+        private void UpdateBarChart(List<Transaction> transactions, DateTime periodStartDate)
+        {
+            var expensesByDayOfWeek = transactions
+                .Where(t => !t.IsIncome)
+                .GroupBy(t => t.Date.DayOfWeek)
+                .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
+
+            var chartEntries = new List<ChartEntry>();
+            // --- ИЗМЕНЕНО: Русские сокращения дней недели ---
+            string[] dayLabels = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
+            DayOfWeek[] daysOrder = { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
+
+
+            for (int i = 0; i < daysOrder.Length; i++)
+            {
+                DayOfWeek currentDay = daysOrder[i];
+                decimal totalAmount = expensesByDayOfWeek.TryGetValue(currentDay, out var amount) ? amount : 0;
+
+                chartEntries.Add(new ChartEntry((float)totalAmount)
                 {
-                    string categoryName = categoryNames.TryGetValue(group.Key, out var name) ? name : "Категория?";
-                    // --- ИЗМЕНИ ЭТУ СТРОКУ ---
-                    string valueLabel = group.Sum(t => t.Amount).ToString("F2") + " €";
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
-
-                    return new ChartEntry((float)group.Sum(t => t.Amount))
-                    {
-                        Label = categoryName,
-                        ValueLabel = valueLabel, // Используем переменную
-                        Color = GetCategoryColor(categoryName)
-                    };
-                })
-                .ToList();
-
-            // Остальной код метода без изменений...
-            ExpensesChart = new PieChart
-            {
-                Entries = expenseEntries,
-                LabelTextSize = 28f,
-                BackgroundColor = SKColors.Transparent,
-                LabelMode = LabelMode.RightOnly
-            };
-        }
-
-        private SKColor GetCategoryColor(string categoryName)
-        {
-            if (_categoryColors.TryGetValue(categoryName, out var color))
-            {
-                return color;
+                    Label = dayLabels[i], // "Пн", "Вт", ...
+                    ValueLabel = totalAmount > 0 ? totalAmount.ToString("N0") : "0",
+                    Color = _barChartColor
+                });
             }
-            color = new SKColor((byte)_random.Next(100, 256), (byte)_random.Next(100, 256), (byte)_random.Next(100, 256));
-            _categoryColors[categoryName] = color;
-            return color;
+
+            SpendingBarChart = new BarChart
+            {
+                Entries = chartEntries,
+                LabelTextSize = 12f,
+                ValueLabelTextSize = 12f,
+                BackgroundColor = SKColors.Transparent,
+                LabelOrientation = Orientation.Horizontal,
+                ValueLabelOrientation = Orientation.Horizontal,
+                IsAnimated = false,
+                Margin = 5,
+                PointMode = PointMode.None,
+                PointSize = 0,
+            };
         }
 
         [RelayCommand]
@@ -207,15 +222,23 @@ namespace IsiklikRahahaldur.ViewModels
         }
 
         [RelayCommand]
+        private async Task GoToAddExpenseAsync()
+        {
+            await GoToAddTransactionAsync(false);
+        }
+
+
+        [RelayCommand]
         private async Task DeleteTransactionAsync(TransactionDisplayViewModel transactionVM)
         {
             if (transactionVM is null) return;
 
-            bool answer = await Shell.Current.DisplayAlert("Подтверждение", $"Вы уверены, что хотите удалить '{transactionVM.Transaction.Description}'?", "Да", "Нет");
+            // --- ИЗМЕНЕНО: Русский текст в подтверждении ---
+            bool answer = await Shell.Current.DisplayAlert("Подтверждение", $"Удалить транзакцию '{transactionVM.Transaction.Description}'?", "Да", "Нет");
             if (!answer) return;
 
             await _databaseService.DeleteTransactionAsync(transactionVM.Transaction);
-            await LoadTransactionsAsync(); // Перезагружаем данные с учетом текущего фильтра
+            await LoadTransactionsAsync();
         }
 
         [RelayCommand]
