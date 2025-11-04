@@ -40,6 +40,11 @@ namespace IsiklikRahahaldur.ViewModels
         private readonly SKColor _incomeChartColor = SKColor.Parse("#2ECC71"); // Зеленый
         private readonly SKColor _expenseChartColor = SKColor.Parse("#E74C3C"); // Красный
 
+        [RelayCommand]
+        private async Task GoToSettingsAsync()
+        {
+            await Shell.Current.GoToAsync(nameof(SettingsPage));
+        }
         public MainViewModel(DatabaseService databaseService)
         {
             _databaseService = databaseService;

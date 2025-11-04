@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:IsiklikRahahaldur.ViewModels"
+             x:Class="IsiklikRahahaldur.Views.SettingsPage"
+             x:DataType="vm:SettingsViewModel"
+             Title="{Binding Title}">
+
+    <VerticalStackLayout Spacing="15" Padding="20">
+
+        <Label Text="Тема приложения" FontSize="18" FontFamily="OpenSansSemibold" />
+        <Picker ItemsSource="{Binding Themes}"
+                SelectedItem="{Binding SelectedTheme}"
+                Title="Выберите тему" />
+
+        <Line Stroke="LightGray" StrokeThickness="1" Margin="0,10" />
+
+        <Label Text="Язык приложения" FontSize="18" FontFamily="OpenSansSemibold" />
+        <Picker Title="Выберите язык">
+            <Picker.ItemsSource>
+                <x:Array Type="{x:Type x:String}">
+                    <x:String>Русский</x:String>
+                    <x:String>English (в разработке)</x:String>
+                    <x:String>Eesti (в разработке)</x:String>
+                </x:Array>
+            </Picker.ItemsSource>
+            <Picker.SelectedIndex>0</Picker.SelectedIndex>
+        </Picker>
+        <Label Text="Смена языка потребует рефакторинга приложения." FontSize="Micro" TextColor="Gray" />
+
+    </VerticalStackLayout>
+</ContentPage>

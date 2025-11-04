@@ -39,14 +39,14 @@
                     <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
 
                         <VerticalStackLayout Grid.Column="0" Spacing="8" Margin="0,5">
-                            <ImageButton Source="send_money_icon.png"
+                            <ImageButton Source="settings_icon.png"
                                          Style="{StaticResource QuickActionIcon}"
-                                         Command="{Binding GoToSendMoneyCommand}">
+                                         Command="{Binding GoToSettingsCommand}">
                                 <ImageButton.Behaviors>
-                                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
+                                    <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
                                 </ImageButton.Behaviors>
                             </ImageButton>
-                            <Label Text="Перевод" Style="{StaticResource QuickActionLabel}"/>
+                            <Label Text="Настройки" Style="{StaticResource QuickActionLabel}"/>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="1" Spacing="8" Margin="0,5">
