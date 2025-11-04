@@ -34,46 +34,44 @@
 
         <ScrollView Grid.Row="1">
             <VerticalStackLayout Spacing="0" Padding="0,0,0,15">
-                <Border Style="{StaticResource InfoCard}">
-                    <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
-                        <ImageButton Source="add_money_icon.png"
-                                         Style="{StaticResource QuickActionIcon}"
-                                         Command="{Binding GoToAddIncomeCommand}">
-                            <ImageButton.Behaviors>
-                                <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
-                            </ImageButton.Behaviors>
-                        </ImageButton>
-                        <Label Text="Add Money" Style="{StaticResource QuickActionLabel}"/>
-                    </VerticalStackLayout>
-                </Border>
 
                 <Border Style="{StaticResource InfoCard}">
                     <Grid ColumnDefinitions="*, *, *" ColumnSpacing="10">
 
                         <VerticalStackLayout Grid.Column="0" Spacing="8" Margin="0,5">
-                            <Image Source="send_money_icon.png" Style="{StaticResource QuickActionIcon}">
-                                <Image.Behaviors>
-                                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
-                                </Image.Behaviors>
-                            </Image>
-                            <Label Text="Send Money" Style="{StaticResource QuickActionLabel}"/>
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Grid.Column="1" Spacing="8" Margin="0,5">
-                            <Image Source="pay_bills_icon.png" Style="{StaticResource QuickActionIcon}">
-                                <Image.Behaviors>
-                                    <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
-                                </Image.Behaviors>
-                            </Image>
-                            <Label Text="Pay Bills" Style="{StaticResource QuickActionLabel}"/>
-                        </VerticalStackLayout>
-
-                        <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
-                            <ImageButton Source="add_money_icon.png" Style="{StaticResource QuickActionIcon}" Command="{Binding GoToAddTransactionCommand}" CommandParameter="True">
+                            <ImageButton Source="send_money_icon.png"
+                                         Style="{StaticResource QuickActionIcon}"
+                                         Command="{Binding GoToSendMoneyCommand}">
                                 <ImageButton.Behaviors>
                                     <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
                                 </ImageButton.Behaviors>
                             </ImageButton>
+                            <Label Text="Send Money" Style="{StaticResource QuickActionLabel}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="1" Spacing="8" Margin="0,5">
+                            <ImageButton Source="pay_bills_icon.png"
+                                         Style="{StaticResource QuickActionIcon}"
+                                         Command="{Binding GoToPayBillsCommand}">
+                                <ImageButton.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
+                                </ImageButton.Behaviors>
+                            </ImageButton>
+                            <Label Text="Pay Bills" Style="{StaticResource QuickActionLabel}"/>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
+                            <ImageButton Source="add_money_icon.png"
+                                         Style="{StaticResource QuickActionIcon}"
+                                         Command="{Binding GoToAddTransactionCommand}">
+                                <ImageButton.CommandParameter>
+                                    <x:Boolean>True</x:Boolean>
+                                </ImageButton.CommandParameter>
+                                <ImageButton.Behaviors>
+                                    <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
+                                </ImageButton.Behaviors>
+                            </ImageButton>
+
                             <Label Text="Add Money" Style="{StaticResource QuickActionLabel}"/>
                         </VerticalStackLayout>
                     </Grid>
