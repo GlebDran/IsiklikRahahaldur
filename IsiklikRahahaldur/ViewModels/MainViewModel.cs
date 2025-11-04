@@ -36,7 +36,9 @@ namespace IsiklikRahahaldur.ViewModels
         [ObservableProperty]
         private decimal _periodExpense;
 
-        private readonly SKColor _barChartColor = SKColor.Parse("#2ECC71");
+        // --- ИЗМЕНЕНО: Добавлены два цвета ---
+        private readonly SKColor _incomeChartColor = SKColor.Parse("#2ECC71"); // Зеленый
+        private readonly SKColor _expenseChartColor = SKColor.Parse("#E74C3C"); // Красный
 
         public MainViewModel(DatabaseService databaseService)
         {
@@ -44,24 +46,32 @@ namespace IsiklikRahahaldur.ViewModels
             Title = "Мой кошелек";
             Transactions = new ObservableCollection<TransactionDisplayViewModel>();
 
-            // --- НАЧАЛО ИСПРАВЛЕНИЯ ---
-            // Создаем начальный список с нулями, чтобы график не был пустым
+            // --- ИСПРАВЛЕНИЕ КОНСТРУКТОРА ---
+            // (Логика та же, просто используем новые переменные цвета)
             var initialEntries = new List<ChartEntry>();
             string[] dayLabels = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
 
             for (int i = 0; i < dayLabels.Length; i++)
             {
+                // Добавляем "заглушку" для дохода
                 initialEntries.Add(new ChartEntry(0)
                 {
                     Label = dayLabels[i],
                     ValueLabel = "0",
-                    Color = _barChartColor
+                    Color = _incomeChartColor
+                });
+                // Добавляем "заглушку" для расхода
+                initialEntries.Add(new ChartEntry(0)
+                {
+                    Label = dayLabels[i],
+                    ValueLabel = "",
+                    Color = _expenseChartColor
                 });
             }
 
             SpendingBarChart = new BarChart
             {
-                Entries = initialEntries, // <-- ТЕПЕРЬ СПИСОК НЕ ПУСТОЙ
+                Entries = initialEntries,
                 LabelTextSize = 12f,
                 ValueLabelTextSize = 12f,
                 BackgroundColor = SKColors.Transparent,
@@ -105,7 +115,6 @@ namespace IsiklikRahahaldur.ViewModels
                 var categoriesFromDb = await _databaseService.GetCategoriesAsync();
                 var categoriesDict = categoriesFromDb.ToDictionary(c => c.Id, c => c.Name);
 
-                // Добавляем "Без категории" в словарь для корректного отображения, если CategoryId = 0
                 if (!categoriesDict.ContainsKey(0))
                 {
                     categoriesDict.Add(0, "Без категории");
@@ -147,21 +156,21 @@ namespace IsiklikRahahaldur.ViewModels
                 Transactions.Clear();
                 foreach (var t in filteredTransactions)
                 {
-                    // --- ИЗМЕНЕНО: Определяем имя категории и иконку ---
                     string categoryName = categoriesDict.TryGetValue(t.CategoryId, out var name) ? name : "Без категории";
-                    string categoryIcon = GetIconForCategory(categoryName); // Вызываем новый метод
+                    string categoryIcon = GetIconForCategory(categoryName);
 
                     Transactions.Add(new TransactionDisplayViewModel
                     {
                         Transaction = t,
                         CategoryName = categoryName,
-                        CategoryIcon = categoryIcon // Присваиваем имя файла иконки
+                        CategoryIcon = categoryIcon
                     });
-                    // --- КОНЕЦ ИЗМЕНЕНИЯ ---
                 }
 
                 CalculateBalanceAndTotals(transactionsFromDb);
                 CalculatePeriodTotals(filteredTransactions);
+
+                // --- ИЗМЕНЕНО: Передаем отфильтрованные транзакции в график ---
                 UpdateBarChart(filteredTransactions, startDate);
             }
             finally
@@ -170,7 +179,6 @@ namespace IsiklikRahahaldur.ViewModels
             }
         }
 
-        // --- НОВЫЙ МЕТОД: Возвращает имя файла иконки по имени категории ---
         private string GetIconForCategory(string categoryName)
         {
             switch (categoryName)
@@ -182,12 +190,9 @@ namespace IsiklikRahahaldur.ViewModels
                 case "Здоровье": return "health_icon.png";
                 case "Подарки": return "gift_icon.png";
                 case "Зарплата": return "salary_icon.png";
-                // Добавьте другие предопределенные категории здесь
-                default: return "other_icon.png"; // Иконка по умолчанию
+                default: return "other_icon.png";
             }
         }
-        // --- КОНЕЦ НОВОГО МЕТОДА ---
-
 
         private void CalculateBalanceAndTotals(List<Transaction> allTransactions)
         {
@@ -202,33 +207,76 @@ namespace IsiklikRahahaldur.ViewModels
             PeriodExpense = periodTransactions.Where(t => !t.IsIncome).Sum(t => t.Amount);
         }
 
+        // --- ИЗМЕНЕНО: Полностью обновленный метод UpdateBarChart ---
         private void UpdateBarChart(List<Transaction> transactions, DateTime periodStartDate)
         {
+            // 1. Группируем расходы по дням недели
             var expensesByDayOfWeek = transactions
                 .Where(t => !t.IsIncome)
+                .GroupBy(t => t.Date.DayOfWeek)
+                .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
+
+            // 2. Группируем доходы по дням недели
+            var incomesByDayOfWeek = transactions
+                .Where(t => t.IsIncome)
                 .GroupBy(t => t.Date.DayOfWeek)
                 .ToDictionary(g => g.Key, g => g.Sum(t => t.Amount));
 
             var chartEntries = new List<ChartEntry>();
             string[] dayLabels = { "Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс" };
             DayOfWeek[] daysOrder = { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday };
+            var culture = new CultureInfo("ru-RU"); // Для корректного отображения чисел
+
+            // Находим максимальные значения для корректной шкалы
+            decimal maxIncome = 0;
+            decimal maxExpense = 0;
+
+            if (incomesByDayOfWeek.Any())
+                maxIncome = incomesByDayOfWeek.Values.Max();
+
+            if (expensesByDayOfWeek.Any())
+                maxExpense = expensesByDayOfWeek.Values.Max();
+
+            var maxChartValue = (float)Math.Max(maxIncome, maxExpense) * 1.2f; // +20% запаса
+            if (maxChartValue == 0) maxChartValue = 100; // Минимальная высота, если данных нет
 
             for (int i = 0; i < daysOrder.Length; i++)
             {
                 DayOfWeek currentDay = daysOrder[i];
-                decimal totalAmount = expensesByDayOfWeek.TryGetValue(currentDay, out var amount) ? amount : 0;
 
-                chartEntries.Add(new ChartEntry((float)totalAmount)
+                // Получаем доход
+                decimal totalIncome = incomesByDayOfWeek.TryGetValue(currentDay, out var income) ? income : 0;
+
+                // Получаем расход
+                decimal totalExpense = expensesByDayOfWeek.TryGetValue(currentDay, out var expense) ? expense : 0;
+
+                // Добавляем запись ДОХОДА (зеленый, положительный)
+                chartEntries.Add(new ChartEntry((float)totalIncome)
                 {
                     Label = dayLabels[i],
-                    ValueLabel = totalAmount > 0 ? totalAmount.ToString("N0") : "0",
-                    Color = _barChartColor
+                    ValueLabel = totalIncome > 0 ? totalIncome.ToString("N0", culture) : (totalExpense > 0 ? "" : "0"), // Показываем 0, только если обе суммы 0
+                    Color = _incomeChartColor,
+                    ValueLabelColor = _incomeChartColor
+                });
+
+                // Добавляем запись РАСХОДА (красный, отрицательный)
+                chartEntries.Add(new ChartEntry(totalExpense > 0 ? (float)totalExpense * -1 : 0) // Умножаем на -1, чтобы график шел вниз
+                {
+                    Label = dayLabels[i],
+                    ValueLabel = totalExpense > 0 ? totalExpense.ToString("N0", culture) : "", // Не показываем 0 для расходов, если есть доход
+                    Color = _expenseChartColor,
+                    ValueLabelColor = _expenseChartColor
                 });
             }
 
             if (SpendingBarChart is BarChart barChart)
             {
                 barChart.Entries = chartEntries;
+
+                // Устанавливаем MinValue/MaxValue, чтобы отрицательные значения отображались
+                barChart.MinValue = (float)maxExpense * -1.2f; // Минимальное значение (отрицательное)
+                barChart.MaxValue = maxChartValue; // Максимальное значение (положительное)
+
                 OnPropertyChanged(nameof(SpendingBarChart));
             }
         }
@@ -236,7 +284,6 @@ namespace IsiklikRahahaldur.ViewModels
         [RelayCommand]
         private async Task GoToAddIncomeAsync()
         {
-            // Просто вызываем существующий метод с нужным параметром
             await GoToAddTransactionAsync(true);
         }
 

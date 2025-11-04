@@ -46,18 +46,21 @@
                                     <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
                                 </ImageButton.Behaviors>
                             </ImageButton>
-                            <Label Text="Send Money" Style="{StaticResource QuickActionLabel}"/>
+                            <Label Text="Перевод" Style="{StaticResource QuickActionLabel}"/>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="1" Spacing="8" Margin="0,5">
                             <ImageButton Source="pay_bills_icon.png"
                                          Style="{StaticResource QuickActionIcon}"
-                                         Command="{Binding GoToPayBillsCommand}">
+                                         Command="{Binding GoToAddTransactionCommand}">
+                                <ImageButton.CommandParameter>
+                                    <x:Boolean>False</x:Boolean>
+                                </ImageButton.CommandParameter>
                                 <ImageButton.Behaviors>
                                     <toolkit:IconTintColorBehavior TintColor="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}" />
                                 </ImageButton.Behaviors>
                             </ImageButton>
-                            <Label Text="Pay Bills" Style="{StaticResource QuickActionLabel}"/>
+                            <Label Text="Расход" Style="{StaticResource QuickActionLabel}"/>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout Grid.Column="2" Spacing="8" Margin="0,5">
@@ -71,16 +74,15 @@
                                     <toolkit:IconTintColorBehavior TintColor="{StaticResource AccentGreen}" />
                                 </ImageButton.Behaviors>
                             </ImageButton>
-
-                            <Label Text="Add Money" Style="{StaticResource QuickActionLabel}"/>
+                            <Label Text="Доход" Style="{StaticResource QuickActionLabel}"/>
                         </VerticalStackLayout>
                     </Grid>
                 </Border>
 
                 <Border Style="{StaticResource InfoCard}">
                     <VerticalStackLayout Spacing="10">
-                        <Label Text="Weekly Spending" FontSize="16" FontFamily="OpenSansSemibold"/>
-                        <Label Text="{Binding PeriodExpense, StringFormat='Total: {0:N2} €', Mode=OneWay}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" IsVisible="{Binding IsNotBusy}"/>
+                        <Label Text="Расходы за неделю" FontSize="16" FontFamily="OpenSansSemibold"/>
+                        <Label Text="{Binding PeriodExpense, StringFormat='Всего: {0:N2} €', Mode=OneWay}" FontSize="12" TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}" IsVisible="{Binding IsNotBusy}"/>
 
                         <microcharts:ChartView Chart="{Binding SpendingBarChart}" HeightRequest="150" />
                     </VerticalStackLayout>
@@ -89,14 +91,13 @@
                 <Border Style="{StaticResource InfoCard}">
                     <VerticalStackLayout Spacing="12">
                         <Grid ColumnDefinitions="*, Auto">
-                            <Label Grid.Column="0" Text="Recent Transactions" FontSize="16" FontFamily="OpenSansSemibold" VerticalOptions="Center"/>
-                            <Button Grid.Column="1" Text="See All" FontSize="12" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Padding="0" VerticalOptions="Center" FontFamily="OpenSansSemibold"/>
+                            <Label Grid.Column="0" Text="Недавние транзакции" FontSize="16" FontFamily="OpenSansSemibold" VerticalOptions="Center"/>
+                            <Button Grid.Column="1" Text="Смотреть все" FontSize="12" BackgroundColor="Transparent" TextColor="{StaticResource Primary}" Padding="0" VerticalOptions="Center" FontFamily="OpenSansSemibold"/>
                         </Grid>
 
                         <CollectionView ItemsSource="{Binding Transactions}" Margin="0" SelectionMode="None" MaximumHeightRequest="300">
                             <CollectionView.EmptyView>
-                                <Label Text="Нет транзакций за выбранный период."
-                                       HorizontalOptions="Center" VerticalOptions="Center" Margin="0,20"
+                                <Label Text="Нет транзакций за выбранный период." HorizontalOptions="Center" VerticalOptions="Center" Margin="0,20"
                                        TextColor="{AppThemeBinding Light={StaticResource SecondaryTextLight}, Dark={StaticResource SecondaryTextDark}}"/>
                             </CollectionView.EmptyView>
                             <CollectionView.ItemTemplate>
@@ -104,14 +105,14 @@
                                     <SwipeView Margin="0,0,0,5">
                                         <SwipeView.LeftItems>
                                             <SwipeItems Mode="Execute">
-                                                <SwipeItem Text="Edit" BackgroundColor="LightSkyBlue"
+                                                <SwipeItem Text="Изменить" BackgroundColor="LightSkyBlue"
                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=GoToEditTransactionCommand}"
                                                            CommandParameter="{Binding .}"/>
                                             </SwipeItems>
                                         </SwipeView.LeftItems>
                                         <SwipeView.RightItems>
                                             <SwipeItems Mode="Execute">
-                                                <SwipeItem Text="Delete" BackgroundColor="IndianRed"
+                                                <SwipeItem Text="Удалить" BackgroundColor="IndianRed"
                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:MainViewModel}}, Path=DeleteTransactionCommand}"
                                                            CommandParameter="{Binding .}"/>
                                             </SwipeItems>
@@ -137,7 +138,7 @@
                                                 <Label.TextColor>
                                                     <Binding Path="Transaction.IsIncome">
                                                         <Binding.Converter>
-                                                            <toolkit:BoolToObjectConverter TrueObject="{StaticResource AccentGreen}" FalseObject="{AppThemeBinding Light={StaticResource PrimaryTextLight}, Dark={StaticResource PrimaryTextDark}}"/>
+                                                            <toolkit:BoolToObjectConverter TrueObject="{StaticResource AccentGreen}" FalseObject="{StaticResource AccentRed}"/>
                                                         </Binding.Converter>
                                                     </Binding>
                                                 </Label.TextColor>
