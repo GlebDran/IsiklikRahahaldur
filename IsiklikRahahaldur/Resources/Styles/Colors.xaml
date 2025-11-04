@@ -10,8 +10,8 @@
     <Color x:Key="AccentRed">#E74C3C</Color>
     <Color x:Key="PageBackgroundLight">#F5F5F7</Color>
     <Color x:Key="CardBackgroundLight">White</Color>
-    <Color x:Key="PageBackgroundDark">#121212</Color>
-    <Color x:Key="CardBackgroundDark">#1E1E1E</Color>
+    <Color x:Key="PageBackgroundDark">#0D1B2A</Color>
+    <Color x:Key="CardBackgroundDark">#1B263B</Color>
 
     <Color x:Key="PrimaryTextLight">#333333</Color>
     <Color x:Key="SecondaryTextLight">Gray</Color>
